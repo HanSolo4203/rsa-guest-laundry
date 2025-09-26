@@ -4,9 +4,6 @@ import { Toaster } from '@/components/ui/sonner'
 import { Service } from '@/lib/types/database'
 import Image from 'next/image'
 
-// Force dynamic rendering
-export const dynamic = 'force-dynamic'
-
 export default async function Home() {
   let services: Service[] = []
   
