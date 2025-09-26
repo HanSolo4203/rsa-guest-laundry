@@ -1,0 +1,12 @@
+{
+  "functions": {
+    "app/**": {
+      "maxDuration": 30
+    }
+  },
+  "build": {
+    "env": {
+      "NEXT_PRIVATE_STANDALONE": "true"
+    }
+  }
+}
