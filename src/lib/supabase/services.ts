@@ -153,6 +153,7 @@ export async function createBooking(bookingData: {
   service_id: string
   collection_date: string
   departure_date: string
+  additional_details?: string
 }) {
   const supabase = createClient()
   

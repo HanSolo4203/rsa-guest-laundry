@@ -1,3 +1,553 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Parallax hover effect for logo */
+.hide-autofill-icons input::-webkit-contacts-auto-fill-button,
+.hide-autofill-icons input::-webkit-credentials-auto-fill-button,
+input::-webkit-contacts-auto-fill-button,
+input::-webkit-credentials-auto-fill-button {
+  visibility: hidden;
+  display: none;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+}
+
+/* Hide Safari's contact icon that can still appear on focus */
+input[type="text"]::-webkit-textfield-decoration-container,
+input[type="tel"]::-webkit-textfield-decoration-container {
+  display: none !important;
+}
+
+/* Keep autofilled text white on dark backgrounds */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  -webkit-text-fill-color: #fff;
+  transition: background-color 9999s ease-out 0s;
+}
+
+.parallax-logo {
+  transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transform-style: preserve-3d;
+  transform: perspective(1000px) translateZ(0);
+}
+
+.parallax-logo:hover {
+  transform: perspective(1000px) scale(1.02) translateZ(5px);
+  filter: drop-shadow(0 15px 30px rgba(0, 0, 0, 0.2));
+}
+
+/* Dynamic parallax effect based on mouse position */
+.parallax-container {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+.parallax-logo-dynamic {
+  transition: transform 0.2s ease-out;
+  transform-style: preserve-3d;
+  transform: perspective(1000px) translateZ(0);
+}
+
+.parallax-logo-dynamic:hover {
+  filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.3));
+}
+
+/* Animated background patterns for login page */
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  25% {
+    transform: translateY(-10px) translateX(5px);
+  }
+  50% {
+    transform: translateY(-5px) translateX(-5px);
+  }
+  75% {
+    transform: translateY(-15px) translateX(3px);
+  }
+}
+
+@keyframes float-reverse {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  25% {
+    transform: translateY(8px) translateX(-8px);
+  }
+  50% {
+    transform: translateY(12px) translateX(6px);
+  }
+  75% {
+    transform: translateY(5px) translateX(-3px);
+  }
+}
+
+@keyframes flow {
+  0%, 100% {
+    transform: translateX(0px);
+  }
+  50% {
+    transform: translateX(10px);
+  }
+}
+
+@keyframes wave-1 {
+  0%, 100% {
+    d: path("M0,300 Q200,100 400,300 T800,300");
+  }
+  50% {
+    d: path("M0,300 Q200,80 400,300 T800,300");
+  }
+}
+
+@keyframes wave-2 {
+  0%, 100% {
+    d: path("M0,400 Q300,200 600,400 T800,400");
+  }
+  50% {
+    d: path("M0,400 Q300,180 600,400 T800,400");
+  }
+}
+
+@keyframes wave-3 {
+  0%, 100% {
+    d: path("M100,500 Q400,300 700,500");
+  }
+  50% {
+    d: path("M100,500 Q400,280 700,500");
+  }
+}
+
+.animate-float-slow {
+  animation: float-slow 8s ease-in-out infinite;
+}
+
+.animate-float-reverse {
+  animation: float-reverse 10s ease-in-out infinite;
+}
+
+.animate-flow {
+  animation: flow 6s ease-in-out infinite;
+}
+
+.animate-wave-1 {
+  animation: wave-1 4s ease-in-out infinite;
+}
+
+.animate-wave-2 {
+  animation: wave-2 5s ease-in-out infinite;
+}
+
+.animate-wave-3 {
+  animation: wave-3 6s ease-in-out infinite;
+}
+
+/* Home page background animations */
+@keyframes float-gentle {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px) scale(1);
+  }
+  25% {
+    transform: translateY(-8px) translateX(4px) scale(1.02);
+  }
+  50% {
+    transform: translateY(-4px) translateX(-4px) scale(0.98);
+  }
+  75% {
+    transform: translateY(-12px) translateX(2px) scale(1.01);
+  }
+}
+
+@keyframes float-reverse-gentle {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px) scale(1);
+  }
+  25% {
+    transform: translateY(6px) translateX(-6px) scale(0.99);
+  }
+  50% {
+    transform: translateY(10px) translateX(4px) scale(1.01);
+  }
+  75% {
+    transform: translateY(4px) translateX(-2px) scale(0.98);
+  }
+}
+
+@keyframes float-slow-gentle {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px) rotate(0deg);
+  }
+  33% {
+    transform: translateY(-6px) translateX(3px) rotate(1deg);
+  }
+  66% {
+    transform: translateY(-3px) translateX(-3px) rotate(-1deg);
+  }
+}
+
+@keyframes float-drift {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  50% {
+    transform: translateY(-15px) translateX(10px);
+  }
+}
+
+@keyframes float-drift-reverse {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  50% {
+    transform: translateY(12px) translateX(-8px);
+  }
+}
+
+.animate-float-gentle {
+  animation: float-gentle 12s ease-in-out infinite;
+}
+
+.animate-float-reverse-gentle {
+  animation: float-reverse-gentle 15s ease-in-out infinite;
+}
+
+.animate-float-slow-gentle {
+  animation: float-slow-gentle 18s ease-in-out infinite;
+}
+
+.animate-float-drift {
+  animation: float-drift 20s ease-in-out infinite;
+}
+
+.animate-float-drift-reverse {
+  animation: float-drift-reverse 22s ease-in-out infinite;
+}
+
+/* Lens flare effects */
+.lens-flare-container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.lens-flare-1 {
+  position: absolute;
+  top: 20%;
+  left: 15%;
+  width: 2px;
+  height: 2px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.4) 30%, transparent 70%);
+  border-radius: 50%;
+  animation: lens-flare-1 8s ease-in-out infinite;
+}
+
+.lens-flare-2 {
+  position: absolute;
+  top: 60%;
+  right: 20%;
+  width: 1px;
+  height: 1px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0.3) 40%, transparent 80%);
+  border-radius: 50%;
+  animation: lens-flare-2 12s ease-in-out infinite;
+}
+
+.lens-flare-3 {
+  position: absolute;
+  bottom: 30%;
+  left: 70%;
+  width: 1.5px;
+  height: 1.5px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.35) 35%, transparent 75%);
+  border-radius: 50%;
+  animation: lens-flare-3 10s ease-in-out infinite;
+}
+
+@keyframes lens-flare-1 {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+  40% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  60% {
+    opacity: 0.6;
+    transform: scale(0.8);
+  }
+  80% {
+    opacity: 0.3;
+    transform: scale(0.6);
+  }
+}
+
+@keyframes lens-flare-2 {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  30% {
+    opacity: 0.8;
+    transform: scale(1.5);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.8);
+  }
+  70% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+}
+
+@keyframes lens-flare-3 {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  25% {
+    opacity: 0.6;
+    transform: scale(1.1);
+  }
+  45% {
+    opacity: 0.9;
+    transform: scale(1.4);
+  }
+  65% {
+    opacity: 0.5;
+    transform: scale(0.9);
+  }
+  85% {
+    opacity: 0.2;
+    transform: scale(0.5);
+  }
+}
+
+/* Sparkle flare animation across top of logo */
+.sparkle-flare-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-15deg);
+  width: 300px;
+  height: 100px;
+  pointer-events: none;
+}
+
+.sparkle-1 {
+  position: absolute;
+  top: -10px;
+  left: 30px;
+  width: 8px;
+  height: 8px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.8) 30%, transparent 70%);
+  border-radius: 50%;
+  animation: sparkle-1 3s ease-out forwards;
+}
+
+.sparkle-2 {
+  position: absolute;
+  top: -15px;
+  left: 80px;
+  width: 6px;
+  height: 6px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 40%, transparent 80%);
+  border-radius: 50%;
+  animation: sparkle-2 3s ease-out 0.2s forwards;
+}
+
+.sparkle-3 {
+  position: absolute;
+  top: -5px;
+  left: 130px;
+  width: 10px;
+  height: 10px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.6) 25%, transparent 60%);
+  border-radius: 50%;
+  animation: sparkle-3 3s ease-out 0.4s forwards;
+}
+
+.sparkle-4 {
+  position: absolute;
+  top: -12px;
+  left: 180px;
+  width: 7px;
+  height: 7px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.5) 35%, transparent 75%);
+  border-radius: 50%;
+  animation: sparkle-4 3s ease-out 0.6s forwards;
+}
+
+.sparkle-5 {
+  position: absolute;
+  top: -8px;
+  left: 230px;
+  width: 9px;
+  height: 9px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.6) 30%, transparent 70%);
+  border-radius: 50%;
+  animation: sparkle-5 3s ease-out 0.8s forwards;
+}
+
+.sparkle-trail {
+  position: absolute;
+  top: -10px;
+  left: 0;
+  width: 300px;
+  height: 2px;
+  background: linear-gradient(to right, transparent 0%, rgba(255, 255, 255, 0.3) 20%, rgba(255, 255, 255, 0.6) 50%, rgba(255, 255, 255, 0.3) 80%, transparent 100%);
+  animation: sparkle-trail 3s ease-out forwards;
+}
+
+@keyframes sparkle-1 {
+  0% {
+    opacity: 0;
+    transform: scale(0.1);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+  40% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  60% {
+    opacity: 0.6;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+}
+
+@keyframes sparkle-2 {
+  0% {
+    opacity: 0;
+    transform: scale(0.1);
+  }
+  30% {
+    opacity: 0.9;
+    transform: scale(1.1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(0.9);
+  }
+  70% {
+    opacity: 0.5;
+    transform: scale(0.7);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}
+
+@keyframes sparkle-3 {
+  0% {
+    opacity: 0;
+    transform: scale(0.1);
+  }
+  25% {
+    opacity: 1;
+    transform: scale(1.3);
+  }
+  45% {
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
+  65% {
+    opacity: 0.6;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+@keyframes sparkle-4 {
+  0% {
+    opacity: 0;
+    transform: scale(0.1);
+  }
+  35% {
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
+  55% {
+    opacity: 0.6;
+    transform: scale(0.9);
+  }
+  75% {
+    opacity: 0.4;
+    transform: scale(0.7);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+}
+
+@keyframes sparkle-5 {
+  0% {
+    opacity: 0;
+    transform: scale(0.1);
+  }
+  40% {
+    opacity: 0.9;
+    transform: scale(1.2);
+  }
+  60% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  80% {
+    opacity: 0.5;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+@keyframes sparkle-trail {
+  0% {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  20% {
+    opacity: 0.6;
+    transform: translateX(0px);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateX(30px);
+  }
+  80% {
+    opacity: 0.4;
+    transform: translateX(60px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(90px);
+  }
+}

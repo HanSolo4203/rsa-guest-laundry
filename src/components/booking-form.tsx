@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { format } from 'date-fns'
-import { Calendar as CalendarIcon } from 'lucide-react'
+import { Calendar as CalendarIcon, User as UserIcon, Phone as PhoneIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { toast } from 'sonner'
@@ -65,6 +65,7 @@ export function BookingForm({ services }: BookingFormProps) {
       service_id: '',
       collection_date: format(today, 'yyyy-MM-dd'),
       departure_date: format(tomorrow, 'yyyy-MM-dd'),
+      additional_details: '',
     },
   })
 
@@ -86,7 +87,7 @@ export function BookingForm({ services }: BookingFormProps) {
   return (
     <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 sm:space-y-8" onKeyDown={(e) => {
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 sm:space-y-6" onKeyDown={(e) => {
           // Prevent form submission on Enter key press in input fields
           if (e.key === 'Enter') {
             const target = e.target as HTMLElement
@@ -95,21 +96,23 @@ export function BookingForm({ services }: BookingFormProps) {
             }
           }
         }}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
             {/* Left Column */}
-            <div className="space-y-4 sm:space-y-6">
+            <div className="space-y-3 sm:space-y-5">
               <FormField
                 control={form.control}
                 name="first_name"
                 render={({ field }) => (
-                  <FormItem className="min-h-[80px] sm:min-h-[90px]">
+                  <FormItem className="min-h-[72px] sm:min-h-[84px]">
                     <FormLabel className="text-white text-base sm:text-lg font-normal">Name</FormLabel>
                     <FormControl>
-                      <div className="relative">
+                      <div className="relative hide-autofill-icons">
+                        <UserIcon className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-white" />
                         <input
                           type="text"
                           placeholder=""
-                          className="w-full bg-transparent border-0 border-b border-white/30 text-white placeholder-transparent focus:border-white focus:outline-none py-3 sm:py-4 text-lg sm:text-xl"
+                          autoComplete="off"
+                          className="w-full bg-transparent border-0 border-b border-white/30 text-white placeholder-transparent focus:border-white focus:outline-none py-2 sm:py-3 text-lg sm:text-xl pl-8 sm:pl-9"
                           {...field}
                         />
                         <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/30"></div>
@@ -126,14 +129,17 @@ export function BookingForm({ services }: BookingFormProps) {
                 control={form.control}
                 name="phone"
                 render={({ field }) => (
-                  <FormItem className="min-h-[80px] sm:min-h-[90px]">
+                  <FormItem className="min-h-[72px] sm:min-h-[84px]">
                     <FormLabel className="text-white text-base sm:text-lg font-normal">Phone</FormLabel>
                     <FormControl>
-                      <div className="relative">
+                      <div className="relative hide-autofill-icons">
+                        <PhoneIcon className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-white" />
                         <input
                           type="tel"
                           placeholder=""
-                          className="w-full bg-transparent border-0 border-b border-white/30 text-white placeholder-transparent focus:border-white focus:outline-none py-3 sm:py-4 text-lg sm:text-xl"
+                          autoComplete="off"
+                          inputMode="tel"
+                          className="w-full bg-transparent border-0 border-b border-white/30 text-white placeholder-transparent focus:border-white focus:outline-none py-2 sm:py-3 text-lg sm:text-xl pl-8 sm:pl-9"
                           {...field}
                         />
                         <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/30"></div>
@@ -150,7 +156,7 @@ export function BookingForm({ services }: BookingFormProps) {
                 control={form.control}
                 name="collection_date"
                 render={({ field }) => (
-                  <FormItem className="min-h-[80px] sm:min-h-[90px]">
+                  <FormItem className="min-h-[72px] sm:min-h-[84px]">
                     <FormLabel className="text-white text-base sm:text-lg font-normal">Collection Date</FormLabel>
                     <FormControl>
                       <DefaultDatePicker
@@ -168,19 +174,21 @@ export function BookingForm({ services }: BookingFormProps) {
             </div>
 
             {/* Right Column */}
-            <div className="space-y-4 sm:space-y-6">
+            <div className="space-y-3 sm:space-y-5">
               <FormField
                 control={form.control}
                 name="last_name"
                 render={({ field }) => (
-                  <FormItem className="min-h-[80px] sm:min-h-[90px]">
+                  <FormItem className="min-h-[72px] sm:min-h-[84px]">
                     <FormLabel className="text-white text-base sm:text-lg font-normal">Last Name</FormLabel>
                     <FormControl>
-                      <div className="relative">
+                      <div className="relative hide-autofill-icons">
+                        <UserIcon className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-white" />
                         <input
                           type="text"
                           placeholder=""
-                          className="w-full bg-transparent border-0 border-b border-white/30 text-white placeholder-transparent focus:border-white focus:outline-none py-3 sm:py-4 text-lg sm:text-xl"
+                          autoComplete="off"
+                          className="w-full bg-transparent border-0 border-b border-white/30 text-white placeholder-transparent focus:border-white focus:outline-none py-2 sm:py-3 text-lg sm:text-xl pl-8 sm:pl-9"
                           {...field}
                         />
                         <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/30"></div>
@@ -197,12 +205,12 @@ export function BookingForm({ services }: BookingFormProps) {
                 control={form.control}
                 name="service_id"
                 render={({ field }) => (
-                  <FormItem className="min-h-[80px] sm:min-h-[90px]">
+                  <FormItem className="min-h-[72px] sm:min-h-[84px]">
                     <FormLabel className="text-white text-base sm:text-lg font-normal">Service Type</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <select
-                          className="w-full bg-transparent border-0 border-b border-white/30 text-white focus:border-white focus:outline-none py-3 sm:py-4 text-lg sm:text-xl appearance-none cursor-pointer"
+                          className="w-full bg-transparent border-0 border-b border-white/30 text-white focus:border-white focus:outline-none py-2 sm:py-3 text-lg sm:text-xl appearance-none cursor-pointer"
                           value={field.value}
                           onChange={field.onChange}
                         >
@@ -232,7 +240,7 @@ export function BookingForm({ services }: BookingFormProps) {
                 control={form.control}
                 name="departure_date"
                 render={({ field }) => (
-                  <FormItem className="min-h-[80px] sm:min-h-[90px]">
+                  <FormItem className="min-h-[72px] sm:min-h-[84px]">
                     <FormLabel className="text-white text-base sm:text-lg font-normal">Departure Date</FormLabel>
                     <FormControl>
                       <DefaultDatePicker
@@ -251,25 +259,46 @@ export function BookingForm({ services }: BookingFormProps) {
           </div>
 
           {/* Bottom Section */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6 pt-6 sm:pt-8">
-            <div className="flex items-start space-x-3">
-              <input
-                type="checkbox"
-                id="privacy"
-                className="mt-1 w-4 h-4 text-blue-600 bg-transparent border-white rounded focus:ring-blue-500 focus:ring-2"
+          <div className="pt-2 sm:pt-3">
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] md:items-end gap-2.5 sm:gap-3.5">
+              <FormField
+                control={form.control}
+                name="additional_details"
+                render={({ field }) => (
+                  <FormItem className="min-h-[72px] sm:min-h-[84px] md:mb-0">
+                    <FormLabel className="text-white text-base sm:text-lg font-normal">Additional Details</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <textarea
+                          placeholder="Any special requests or notes"
+                          className="w-full bg-transparent border-0 border-b border-white/30 text-white placeholder-white/60 focus:border-white focus:outline-none py-2 sm:py-3 text-lg sm:text-xl min-h-[72px] overflow-hidden"
+                          rows={2}
+                          onInput={(e) => {
+                            const el = e.currentTarget
+                            el.style.height = 'auto'
+                            el.style.height = `${el.scrollHeight}px`
+                          }}
+                          {...field}
+                        />
+                        <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/30"></div>
+                      </div>
+                    </FormControl>
+                    <div className="min-h-[20px]">
+                      <FormMessage className="text-red-400" />
+                    </div>
+                  </FormItem>
+                )}
               />
-              <label htmlFor="privacy" className="text-white text-xs sm:text-sm leading-relaxed">
-                My information will not be shared with outside parties.
-              </label>
+              <div className="flex md:self-stretch">
+                <Button 
+                  type="submit" 
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 sm:px-8 py-3 sm:py-3 rounded-none text-sm sm:text-base w-full md:w-auto md:h-full"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Creating Booking...' : 'Submit Request'}
+                </Button>
+              </div>
             </div>
-
-            <Button 
-              type="submit" 
-              className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 sm:px-8 py-3 sm:py-3 rounded-none text-sm sm:text-base w-full sm:w-auto"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? 'Creating Booking...' : 'Submit Request'}
-            </Button>
           </div>
         </form>
       </Form>

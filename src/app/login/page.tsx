@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { toast } from 'sonner'
 import { Mail, Lock, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -52,18 +53,23 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex">
       {/* Left Section - Dark Blue Background with Centered Login */}
-      <div className="w-full lg:w-1/2 bg-black flex items-center justify-center p-8 lg:p-12">
+      <div className="w-full lg:w-1/2 bg-black flex flex-col items-center justify-center p-8 lg:p-12">
         <div className="w-full max-w-md">
           {/* Logo/Branding */}
-          <div className="mb-8">
-            <div className="w-32 h-8 bg-white/10 rounded flex items-center justify-center">
-              <span className="text-white font-semibold text-sm">LAUNDRY PRO</span>
-            </div>
+          <div className="mb-8 flex justify-center">
+            <Image 
+              src="/express laundry.png" 
+              alt="Express Laundry" 
+              width={300}
+              height={99}
+              className="h-18 w-auto object-contain"
+              priority
+            />
           </div>
 
           {/* Login Form */}
           <div className="space-y-6">
-            <h1 className="text-4xl font-bold text-white mb-8">Sign In</h1>
+            <h1 className="text-4xl font-bold text-white mb-8 text-center">Sign In</h1>
             
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               {/* User Name Field */}
@@ -122,16 +128,6 @@ export default function LoginPage() {
                 {isLoading ? 'SIGNING IN...' : 'SIGN IN'}
               </button>
             </form>
-
-            {/* Sign Up Link */}
-            <div className="mt-8 text-center">
-              <p className="text-white text-sm">
-                Don&apos;t have an account?{' '}
-                <a href="#" className="text-blue-400 hover:text-blue-300 transition-colors">
-                  Sign up
-                </a>
-              </p>
-            </div>
           </div>
         </div>
       </div>
@@ -157,11 +153,11 @@ export default function LoginPage() {
           </div>
           
           {/* Abstract Shapes */}
-          <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-1/3 left-1/3 w-96 h-96 bg-gradient-to-tr from-green-500/10 to-blue-500/10 rounded-full blur-3xl"></div>
+          <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full blur-3xl animate-float-slow"></div>
+          <div className="absolute bottom-1/3 left-1/3 w-96 h-96 bg-gradient-to-tr from-green-500/10 to-blue-500/10 rounded-full blur-3xl animate-float-reverse"></div>
           
           {/* Flowing Lines */}
-          <svg className="absolute inset-0 w-full h-full opacity-30" viewBox="0 0 800 600">
+          <svg className="absolute inset-0 w-full h-full opacity-30 animate-flow" viewBox="0 0 800 600">
             <defs>
               <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.8" />
@@ -174,18 +170,21 @@ export default function LoginPage() {
               stroke="url(#lineGradient)"
               strokeWidth="2"
               fill="none"
+              className="animate-wave-1"
             />
             <path
               d="M0,400 Q300,200 600,400 T800,400"
               stroke="url(#lineGradient)"
               strokeWidth="1"
               fill="none"
+              className="animate-wave-2"
             />
             <path
               d="M100,500 Q400,300 700,500"
               stroke="url(#lineGradient)"
               strokeWidth="1.5"
               fill="none"
+              className="animate-wave-3"
             />
           </svg>
         </div>
@@ -193,12 +192,7 @@ export default function LoginPage() {
         {/* Content Overlay */}
         <div className="relative z-10 flex flex-col justify-center items-center text-center p-12">
           <div className="max-w-md">
-            <h2 className="text-3xl font-bold text-white mb-4 leading-relaxed">
-              A new way to experience real estate in the infinite virtual space.
-            </h2>
-            <button className="text-white text-lg font-medium hover:text-blue-400 transition-colors">
-              LEARN MORE
-            </button>
+            {/* Promotional content removed */}
           </div>
         </div>
 

@@ -15,6 +15,7 @@ export interface Booking {
   departure_date: string;
   status: 'pending' | 'confirmed' | 'collected' | 'processing' | 'completed' | 'cancelled';
   total_price?: number;
+  additional_details?: string;
   created_at: string;
 }
 

@@ -7,6 +7,7 @@ export const bookingSchema = z.object({
   service_id: z.string().min(1, 'Please select a service'),
   collection_date: z.string().min(1, 'Please select a collection date'),
   departure_date: z.string().min(1, 'Please select a departure date'),
+  additional_details: z.string().max(1000, 'Please keep notes under 1000 characters').optional(),
 })
 
 export type BookingFormData = z.infer<typeof bookingSchema>
