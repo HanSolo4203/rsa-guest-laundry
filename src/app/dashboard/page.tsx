@@ -447,7 +447,7 @@ export default function DashboardPage() {
                             <Button 
                               variant="outline" 
                               size="sm" 
-                              className="text-xs sm:text-sm border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
+                              className="text-xs sm:text-sm border-gray-600 text-white hover:bg-gray-700 hover:text-white"
                               onClick={() => handleViewBooking(booking)}
                             >
                               View
@@ -455,7 +455,7 @@ export default function DashboardPage() {
                             <Button 
                               variant="outline" 
                               size="sm" 
-                              className="text-xs sm:text-sm border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
+                              className="text-xs sm:text-sm border-gray-600 text-white hover:bg-gray-700 hover:text-white"
                               onClick={() => handleUpdateStatus(booking)}
                             >
                               Update

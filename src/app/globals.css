@@ -3,6 +3,26 @@
 @tailwind utilities;
 
 /* Parallax hover effect for logo */
+/* Dashboard global text color override */
+.dashboard, .dashboard *:not(svg):not(svg *):not(.text-gray-400):not(.text-muted-foreground) {
+  color: #ffffff;
+}
+
+.dashboard .text-gray-400 { /* keep subtle gray where explicitly used */
+  color: #9ca3af;
+}
+/* Arrow-shaped button utility */
+.btn-arrow-right {
+  clip-path: polygon(0 0, calc(100% - 28px) 0, 100% 50%, calc(100% - 28px) 100%, 0 100%);
+}
+
+.btn-arrow-right:hover {
+  filter: brightness(0.95);
+}
+
+.btn-arrow-right:active {
+  filter: brightness(0.9);
+}
 .hide-autofill-icons input::-webkit-contacts-auto-fill-button,
 .hide-autofill-icons input::-webkit-credentials-auto-fill-button,
 input::-webkit-contacts-auto-fill-button,
@@ -15,10 +35,7 @@ input::-webkit-credentials-auto-fill-button {
 }
 
 /* Hide Safari's contact icon that can still appear on focus */
-input[type="text"]::-webkit-textfield-decoration-container,
-input[type="tel"]::-webkit-textfield-decoration-container {
-  display: none !important;
-}
+/* Note: Do not hide -webkit-textfield-decoration-container to avoid Safari input issues */
 
 /* Keep autofilled text white on dark backgrounds */
 input:-webkit-autofill,

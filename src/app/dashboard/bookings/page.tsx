@@ -199,7 +199,7 @@ export default function BookingsPage() {
                             variant="outline" 
                             size="sm" 
                             onClick={() => handleViewCustomerDetails(booking)}
-                            className="text-xs sm:text-sm"
+                            className="text-xs sm:text-sm border-gray-600 text-white hover:bg-gray-700 hover:text-white"
                           >
                             <span className="hidden sm:inline">View</span>
                             <span className="sm:hidden">👁</span>
@@ -208,7 +208,7 @@ export default function BookingsPage() {
                             variant="outline" 
                             size="sm"
                             onClick={() => handleStatusUpdate(booking)}
-                            className="text-xs sm:text-sm"
+                            className="text-xs sm:text-sm border-gray-600 text-white hover:bg-gray-700 hover:text-white"
                           >
                             <Settings className="mr-1 h-3 w-3" />
                             <span className="hidden sm:inline">Status</span>

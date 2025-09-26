@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { format } from 'date-fns'
-import { Calendar as CalendarIcon, User as UserIcon, Phone as PhoneIcon } from 'lucide-react'
+import { Calendar as CalendarIcon, User as UserIcon, Phone as PhoneIcon, ArrowRight as ArrowRightIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { toast } from 'sonner'
@@ -260,7 +260,7 @@ export function BookingForm({ services }: BookingFormProps) {
 
           {/* Bottom Section */}
           <div className="pt-2 sm:pt-3">
-            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] md:items-end gap-2.5 sm:gap-3.5">
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_200px] md:items-start gap-2.5 sm:gap-3.5">
               <FormField
                 control={form.control}
                 name="additional_details"
@@ -271,7 +271,7 @@ export function BookingForm({ services }: BookingFormProps) {
                       <div className="relative">
                         <textarea
                           placeholder="Any special requests or notes"
-                          className="w-full bg-transparent border-0 border-b border-white/30 text-white placeholder-white/60 focus:border-white focus:outline-none py-2 sm:py-3 text-lg sm:text-xl min-h-[72px] overflow-hidden"
+                          className="w-full bg-transparent border-0 border-b border-white/30 text-white placeholder-white/60 focus:border-white focus:outline-none py-2 sm:py-3 text-lg sm:text-xl min-h-[72px] overflow-hidden resize-none"
                           rows={2}
                           onInput={(e) => {
                             const el = e.currentTarget
@@ -289,13 +289,16 @@ export function BookingForm({ services }: BookingFormProps) {
                   </FormItem>
                 )}
               />
-              <div className="flex md:self-stretch">
+              <div className="flex md:self-start">
                 <Button 
                   type="submit" 
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 sm:px-8 py-3 sm:py-3 rounded-none text-sm sm:text-base w-full md:w-auto md:h-full"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 sm:px-7 py-4 sm:py-5 rounded-none text-sm sm:text-base w-full md:w-full md:h-16 btn-arrow-right"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? 'Creating Booking...' : 'Submit Request'}
+                  <span className="inline-flex items-center justify-center gap-2 w-full">
+                    <span>{isSubmitting ? 'Creating Booking...' : 'Submit Request'}</span>
+                    <ArrowRightIcon className="h-4 w-4 sm:h-5 sm:w-5 text-white/90" />
+                  </span>
                 </Button>
               </div>
             </div>

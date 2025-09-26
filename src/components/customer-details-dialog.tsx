@@ -46,7 +46,7 @@ export function CustomerDetailsDialog({ open, onOpenChange, booking }: CustomerD
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[320px] mx-4 max-h-[50vh] overflow-y-auto">
+      <DialogContent className="mx-4 sm:mx-auto sm:max-w-[560px] md:max-w-[640px] max-h-[70vh] overflow-y-auto bg-slate-900/90 backdrop-blur border border-white/10 shadow-xl text-white">
         <DialogHeader>
           <DialogTitle className="text-lg flex items-center gap-2">
             <User className="h-4 w-4" />

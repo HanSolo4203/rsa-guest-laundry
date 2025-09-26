@@ -101,10 +101,10 @@ export function BookingStatusDialog({ open, onOpenChange, booking, onSuccess }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] mx-4 max-h-[90vh] overflow-y-auto">
+      <DialogContent className="mx-4 sm:mx-auto sm:max-w-[560px] md:max-w-[640px] max-h-[80vh] overflow-y-auto bg-slate-900/90 backdrop-blur border border-white/10 shadow-xl text-white">
         <DialogHeader>
           <DialogTitle className="text-lg sm:text-xl">Update Booking Status</DialogTitle>
-          <DialogDescription className="text-sm sm:text-base">
+          <DialogDescription className="text-sm sm:text-base text-white/80">
             Update the status for {booking.first_name} {booking.last_name}&apos;s booking
           </DialogDescription>
         </DialogHeader>
@@ -113,7 +113,7 @@ export function BookingStatusDialog({ open, onOpenChange, booking, onSuccess }: 
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid gap-4">
               <div>
-                <h4 className="font-medium text-sm text-muted-foreground">Service Details</h4>
+                <h4 className="font-medium text-sm text-white/80">Service Details</h4>
                 <div className="text-xs sm:text-sm space-y-1 mt-1">
                   <p><strong>Service:</strong> {booking.service.name}</p>
                   <p><strong>Original Price:</strong> ${booking.service.price.toFixed(2)}</p>
@@ -127,14 +127,14 @@ export function BookingStatusDialog({ open, onOpenChange, booking, onSuccess }: 
                 name="status"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Status</FormLabel>
+                    <FormLabel className="text-white/90">Status</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="bg-gray-800 text-white border-gray-700">
                           <SelectValue placeholder="Select status" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent className="bg-gray-800 text-white border border-gray-700">
                         {statusOptions.map((option) => (
                           <SelectItem key={option.value} value={option.value}>
                             {option.label}
@@ -153,7 +153,7 @@ export function BookingStatusDialog({ open, onOpenChange, booking, onSuccess }: 
                   name="total_price"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Total Price ($)</FormLabel>
+                      <FormLabel className="text-white/90">Total Price ($)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -162,10 +162,11 @@ export function BookingStatusDialog({ open, onOpenChange, booking, onSuccess }: 
                           placeholder="0.00"
                           {...field}
                           onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          className="bg-gray-800 text-white border-gray-700"
                         />
                       </FormControl>
                       <FormMessage />
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-white/70">
                         Enter the final amount the customer will be charged
                       </p>
                     </FormItem>
@@ -180,11 +181,11 @@ export function BookingStatusDialog({ open, onOpenChange, booking, onSuccess }: 
                     variant="outline"
                     onClick={handleDialogClose}
                     disabled={submitting}
-                    className="w-full sm:w-auto order-2 sm:order-1"
+                    className="w-full sm:w-auto order-2 sm:order-1 text-white border-gray-700 hover:bg-gray-700"
                   >
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={submitting} className="w-full sm:w-auto order-1 sm:order-2">
+                  <Button type="submit" disabled={submitting} className="w-full sm:w-auto order-1 sm:order-2 bg-blue-600 hover:bg-blue-700 text-white">
                     {submitting ? 'Updating...' : 'Update Status'}
                   </Button>
                 </DialogFooter>
