@@ -4,9 +4,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { format } from 'date-fns'
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react'
-import { DayPicker } from 'react-day-picker'
-import 'react-day-picker/dist/style.css'
+import { Calendar as CalendarIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { toast } from 'sonner'
@@ -18,98 +16,34 @@ interface BookingFormProps {
   services: Service[]
 }
 
-// Custom Calendar Component using react-day-picker
-function CustomCalendarPicker({ 
-  selected, 
-  onSelect, 
+// Default Date Picker Component
+function DefaultDatePicker({ 
+  value, 
+  onChange, 
   placeholder 
 }: { 
-  selected?: Date
-  onSelect: (date: Date | undefined) => void
+  value?: string
+  onChange: (value: string) => void
   placeholder: string
 }) {
-  const [isOpen, setIsOpen] = useState(false)
-  
-  // Get today's date at midnight for comparison
+  // Get today's date in YYYY-MM-DD format for min attribute
   const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
-  const handleDateSelect = (date: Date | undefined) => {
-    // Prevent selection of past dates
-    if (date && date < today) {
-      return
-    }
-    console.log('Date selected:', date)
-    onSelect(date)
-    setIsOpen(false)
-  }
+  const todayString = today.toISOString().split('T')[0]
 
   return (
     <div className="relative">
-      {/* Trigger Button */}
       <div className="relative">
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={() => setIsOpen(!isOpen)}
-          className="w-full justify-start text-left font-normal bg-transparent border-0 border-b border-white/30 text-white hover:bg-transparent hover:text-white focus:border-white focus:outline-none py-3 sm:py-4 text-lg sm:text-xl rounded-none h-auto p-0"
-        >
-          <CalendarIcon className="mr-2 sm:mr-3 h-4 w-4 sm:h-5 sm:w-5 text-white" />
-          {selected ? format(selected, "dd/MM/yyyy") : placeholder}
-        </Button>
+        <input
+          type="date"
+          value={value || ''}
+          onChange={(e) => onChange(e.target.value)}
+          min={todayString}
+          className="w-full bg-transparent border-0 border-b border-white/30 text-white focus:border-white focus:outline-none py-3 sm:py-4 text-lg sm:text-xl rounded-none h-auto p-0 [color-scheme:dark]"
+          placeholder={placeholder}
+        />
         <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/30"></div>
+        <CalendarIcon className="absolute right-0 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-white pointer-events-none" />
       </div>
-
-      {/* Calendar Dropdown */}
-      {isOpen && (
-        <>
-          <div className="absolute top-full left-0 mt-2 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50 w-72 sm:w-80">
-            <DayPicker
-              mode="single"
-              selected={selected}
-              onSelect={handleDateSelect}
-              disabled={(date) => date < today}
-              className="bg-gray-800 text-white p-4"
-              classNames={{
-                root: "bg-gray-800",
-                months: "bg-gray-800",
-                month: "bg-gray-800",
-                caption: "bg-gray-800 flex justify-center pt-1 relative items-center",
-                caption_label: "text-white text-sm font-medium",
-                nav: "flex items-center",
-                nav_button: "bg-gray-700 hover:bg-gray-600 text-white rounded-md p-1",
-                nav_button_previous: "absolute left-1",
-                nav_button_next: "absolute right-1",
-                table: "w-full border-collapse mt-4",
-                head_row: "flex",
-                head_cell: "text-gray-400 text-sm font-normal w-8 flex-1",
-                row: "flex w-full mt-2",
-                cell: "text-white text-sm p-0 relative w-8 h-8 flex items-center justify-center",
-                day: "w-8 h-8 p-0 text-sm hover:bg-gray-700 rounded-md transition-colors cursor-pointer",
-                day_selected: "bg-blue-600 text-white hover:bg-blue-700",
-                day_today: "bg-gray-600 text-white font-semibold",
-                day_outside: "text-gray-500 opacity-50",
-                day_disabled: "text-gray-600 opacity-50 cursor-not-allowed hover:bg-transparent",
-                day_hidden: "invisible",
-              }}
-              components={{
-                Chevron: ({ orientation, ...props }) => {
-                  if (orientation === 'left') {
-                    return <ChevronLeft className="h-4 w-4" {...props} />
-                  }
-                  return <ChevronRight className="h-4 w-4" {...props} />
-                },
-              }}
-            />
-          </div>
-          
-          {/* Overlay to close calendar */}
-          <div
-            className="fixed inset-0 z-40"
-            onClick={() => setIsOpen(false)}
-          />
-        </>
-      )}
     </div>
   )
 }
@@ -219,9 +153,9 @@ export function BookingForm({ services }: BookingFormProps) {
                   <FormItem className="min-h-[80px] sm:min-h-[90px]">
                     <FormLabel className="text-white text-base sm:text-lg font-normal">Collection Date</FormLabel>
                     <FormControl>
-                      <CustomCalendarPicker
-                        selected={field.value ? new Date(field.value) : undefined}
-                        onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
+                      <DefaultDatePicker
+                        value={field.value}
+                        onChange={field.onChange}
                         placeholder="Select collection date"
                       />
                     </FormControl>
@@ -301,9 +235,9 @@ export function BookingForm({ services }: BookingFormProps) {
                   <FormItem className="min-h-[80px] sm:min-h-[90px]">
                     <FormLabel className="text-white text-base sm:text-lg font-normal">Departure Date</FormLabel>
                     <FormControl>
-                      <CustomCalendarPicker
-                        selected={field.value ? new Date(field.value) : undefined}
-                        onSelect={(date) => field.onChange(date ? format(date, "yyyy-MM-dd") : "")}
+                      <DefaultDatePicker
+                        value={field.value}
+                        onChange={field.onChange}
                         placeholder="Select departure date"
                       />
                     </FormControl>
