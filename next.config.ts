@@ -1,12 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Optimize for Vercel deployment
+  // Force dynamic rendering - no static generation
   output: 'standalone',
   images: {
     unoptimized: false,
   },
-  // Minimal experimental features
+  // Disable static optimization
+  trailingSlash: false,
+  // Force all pages to be dynamic
   experimental: {
     optimizePackageImports: ['lucide-react'],
   },
