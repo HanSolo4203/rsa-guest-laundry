@@ -87,8 +87,8 @@ export default function DashboardPage() {
     .filter(booking => booking.collection_date === today)
     .sort((a, b) => {
       // Check if bookings are completed and paid
-      const aCompletedAndPaid = a.status === 'completed' && a.payment_method && a.payment_method !== 'Not Paid'
-      const bCompletedAndPaid = b.status === 'completed' && b.payment_method && b.payment_method !== 'Not Paid'
+      const aCompletedAndPaid = a.status === 'completed' && a.payment_method
+      const bCompletedAndPaid = b.status === 'completed' && b.payment_method
       
       // Primary sort: completed and paid bookings go to the top
       if (aCompletedAndPaid && !bCompletedAndPaid) return -1
@@ -455,7 +455,7 @@ export default function DashboardPage() {
                   ) : (
                     todaysCollections.map((booking) => {
                       const StatusIcon = statusIcons[booking.status as keyof typeof statusIcons]
-                      const isCompletedAndPaid = booking.status === 'completed' && booking.payment_method && booking.payment_method !== 'Not Paid'
+                      const isCompletedAndPaid = booking.status === 'completed' && booking.payment_method
                       return (
                         <TableRow 
                           key={booking.id} 

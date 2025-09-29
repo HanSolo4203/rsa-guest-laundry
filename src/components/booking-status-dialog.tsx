@@ -56,8 +56,6 @@ interface BookingStatusDialogProps {
 }
 
 const statusOptions = [
-  { value: 'confirmed', label: 'Confirmed' },
-  { value: 'collected', label: 'Collected' },
   { value: 'processing', label: 'Processing' },
   { value: 'completed', label: 'Completed' },
   { value: 'cancelled', label: 'Cancelled' },
