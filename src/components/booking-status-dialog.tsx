@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { Settings } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -137,42 +138,64 @@ export function BookingStatusDialog({ open, onOpenChange, booking, onSuccess }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="mx-4 sm:mx-auto sm:max-w-[560px] md:max-w-[640px] max-h-[80vh] overflow-y-auto bg-slate-900/90 backdrop-blur border border-white/10 shadow-xl text-white">
-        <DialogHeader>
-          <DialogTitle className="text-lg sm:text-xl">Update Booking Status</DialogTitle>
-          <DialogDescription className="text-sm sm:text-base text-white/80">
-            Update the status for {booking.first_name} {booking.last_name}&apos;s booking
+      <DialogContent className="mx-4 sm:mx-auto sm:max-w-[600px] md:max-w-[700px] max-h-[85vh] overflow-y-auto bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 backdrop-blur-xl border border-purple-500/30 shadow-2xl text-white">
+        <DialogHeader className="pb-6">
+          <DialogTitle className="text-2xl font-bold flex items-center gap-3 text-white">
+            <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full flex items-center justify-center">
+              <Settings className="h-5 w-5 text-white" />
+            </div>
+            Update Booking Status
+          </DialogTitle>
+          <DialogDescription className="text-gray-300 text-base">
+            Update the status for <span className="font-semibold text-white">{booking.first_name} {booking.last_name}</span>&apos;s booking
           </DialogDescription>
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid gap-4">
-              <div>
-                <h4 className="font-medium text-sm text-white/80">Service Details</h4>
-                <div className="text-xs sm:text-sm space-y-1 mt-1">
-                  <p><strong>Service:</strong> {booking.service.name}</p>
-                  <p><strong>Price Range:</strong> {booking.service.price}</p>
-                  <p><strong>Collection:</strong> {new Date(booking.collection_date).toLocaleDateString()}</p>
-                  <p><strong>Departure:</strong> {new Date(booking.departure_date).toLocaleDateString()}</p>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="bg-gradient-to-r from-gray-800 to-gray-700 rounded-xl p-6 space-y-4 border border-gray-600 shadow-lg">
+              <h4 className="font-bold text-lg text-white flex items-center gap-2">
+                <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
+                  <Settings className="h-3 w-3 text-white" />
+                </div>
+                Service Details
+              </h4>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="space-y-1">
+                  <p className="text-gray-300"><strong>Service:</strong></p>
+                  <p className="text-white font-semibold bg-gray-600 px-3 py-2 rounded-lg">{booking.service.name}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-gray-300"><strong>Price Range:</strong></p>
+                  <p className="text-white font-semibold bg-gray-600 px-3 py-2 rounded-lg">{booking.service.price}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-gray-300"><strong>Collection:</strong></p>
+                  <p className="text-white font-semibold bg-gray-600 px-3 py-2 rounded-lg">{new Date(booking.collection_date).toLocaleDateString()}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-gray-300"><strong>Departure:</strong></p>
+                  <p className="text-white font-semibold bg-gray-600 px-3 py-2 rounded-lg">{new Date(booking.departure_date).toLocaleDateString()}</p>
                 </div>
               </div>
+            </div>
 
+            <div className="bg-gradient-to-r from-gray-800 to-gray-700 rounded-xl p-6 space-y-4 border border-gray-600 shadow-lg">
               <FormField
                 control={form.control}
                 name="status"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-white/90">Status</FormLabel>
+                    <FormLabel className="text-white font-semibold text-base">Booking Status</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
-                        <SelectTrigger className="bg-gray-800 text-white border-gray-700">
+                        <SelectTrigger className="bg-gray-600 text-white border-gray-500 hover:bg-gray-500 focus:ring-2 focus:ring-purple-500 h-12">
                           <SelectValue placeholder="Select status" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="bg-gray-800 text-white border border-gray-700">
                         {statusOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
+                          <SelectItem key={option.value} value={option.value} className="hover:bg-gray-700">
                             {option.label}
                           </SelectItem>
                         ))}
@@ -182,92 +205,107 @@ export function BookingStatusDialog({ open, onOpenChange, booking, onSuccess }: 
                   </FormItem>
                 )}
               />
+            </div>
 
               {showWeightField && (
-                <FormField
-                  control={form.control}
-                  name="weight_kg"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-white/90">Weight (kg)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="0.1"
-                          min="0.1"
-                          placeholder="0.0"
-                          {...field}
-                          value={field.value || ''}
-                          onChange={(e) => {
-                            const value = e.target.value
-                            field.onChange(value === '' ? 0 : parseFloat(value) || 0)
-                          }}
-                          className="bg-gray-800 text-white border-gray-700"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                      <p className="text-xs text-white/70">
-                        Enter the weight of the laundry in kilograms
-                      </p>
-                      {selectedWeight && selectedWeight > 0 && booking && (
-                        <div className="mt-2 p-2 bg-green-900/30 border border-green-700 rounded text-sm">
-                          <p className="text-green-300">
-                            <strong>Calculated Price:</strong> {formatPrice(calculatePriceFromWeight(selectedWeight, booking.service.name))}
-                          </p>
-                          <p className="text-green-200/80 text-xs mt-1">
-                            Based on {selectedWeight}kg and service: {booking.service.name}
-                          </p>
-                        </div>
-                      )}
-                    </FormItem>
-                  )}
-                />
+                <div className="bg-gradient-to-r from-gray-800 to-gray-700 rounded-xl p-6 space-y-4 border border-gray-600 shadow-lg">
+                  <FormField
+                    control={form.control}
+                    name="weight_kg"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-white font-semibold text-base">Weight (kg)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.1"
+                            min="0.1"
+                            placeholder="0.0"
+                            {...field}
+                            value={field.value || ''}
+                            onChange={(e) => {
+                              const value = e.target.value
+                              field.onChange(value === '' ? 0 : parseFloat(value) || 0)
+                            }}
+                            className="bg-gray-600 text-white border-gray-500 hover:bg-gray-500 focus:ring-2 focus:ring-purple-500 h-12"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                        <p className="text-sm text-gray-300">
+                          Enter the weight of the laundry in kilograms
+                        </p>
+                        {selectedWeight && selectedWeight > 0 && booking && (
+                          <div className="mt-4 p-4 bg-green-900/30 border border-green-500/50 rounded-lg">
+                            <p className="text-green-300 font-semibold text-lg">
+                              <strong>Calculated Price:</strong> {formatPrice(calculatePriceFromWeight(selectedWeight, booking.service.name))}
+                            </p>
+                            <p className="text-green-200/80 text-sm mt-2">
+                              Based on {selectedWeight}kg and service: {booking.service.name}
+                            </p>
+                          </div>
+                        )}
+                      </FormItem>
+                    )}
+                  />
+                </div>
               )}
 
               {showPriceField && (
-                <FormField
-                  control={form.control}
-                  name="total_price"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-white/90">Total Price (R)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          placeholder="0.00"
-                          {...field}
-                          value={field.value || ''}
-                          onChange={(e) => {
-                            const value = e.target.value
-                            field.onChange(value === '' ? 0 : parseFloat(value) || 0)
-                          }}
-                          className="bg-gray-800 text-white border-gray-700"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                      <p className="text-xs text-white/70">
-                        Enter the final amount the customer will be charged
-                      </p>
-                    </FormItem>
-                  )}
-                />
+                <div className="bg-gradient-to-r from-gray-800 to-gray-700 rounded-xl p-6 space-y-4 border border-gray-600 shadow-lg">
+                  <FormField
+                    control={form.control}
+                    name="total_price"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-white font-semibold text-base">Total Price (R)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="0.00"
+                            {...field}
+                            value={field.value || ''}
+                            onChange={(e) => {
+                              const value = e.target.value
+                              field.onChange(value === '' ? 0 : parseFloat(value) || 0)
+                            }}
+                            className="bg-gray-600 text-white border-gray-500 hover:bg-gray-500 focus:ring-2 focus:ring-purple-500 h-12"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                        <p className="text-sm text-gray-300">
+                          Enter the final amount the customer will be charged
+                        </p>
+                      </FormItem>
+                    )}
+                  />
+                </div>
               )}
-            </div>
 
-                <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+                <DialogFooter className="flex-col sm:flex-row gap-4 sm:gap-0 pt-6">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={handleDialogClose}
                     disabled={submitting}
-                    className="w-full sm:w-auto order-2 sm:order-1 text-white border-gray-700 hover:bg-gray-700"
+                    className="w-full sm:w-auto order-2 sm:order-1 text-gray-300 border-gray-600 hover:bg-gray-700 hover:text-white hover:border-gray-500 h-12 font-semibold transition-all duration-200"
                   >
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={submitting} className="w-full sm:w-auto order-1 sm:order-2 bg-blue-600 hover:bg-blue-700 text-white">
-                    {submitting ? 'Updating...' : 'Update Status'}
+                  <Button 
+                    type="submit" 
+                    disabled={submitting} 
+                    className="w-full sm:w-auto order-1 sm:order-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white h-12 font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                  >
+                    {submitting ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Updating...
+                      </div>
+                    ) : (
+                      'Update Status'
+                    )}
                   </Button>
                 </DialogFooter>
           </form>

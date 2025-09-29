@@ -5,13 +5,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Calendar, Users, TrendingUp, Clock, CheckCircle, AlertCircle, CreditCard, Banknote } from 'lucide-react'
+import { Calendar, Users, TrendingUp, Clock, CheckCircle, AlertCircle, CreditCard, Banknote, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import Link from 'next/link'
 import { CollectionNotificationBanner } from '@/components/collection-notification-banner'
 import { CustomerDetailsDialog } from '@/components/customer-details-dialog'
 import { BookingStatusDialog } from '@/components/booking-status-dialog'
 import { getBookings } from '@/lib/supabase/services'
 import { BookingWithService } from '@/lib/types/database'
+import { useSearch } from '@/contexts/search-context'
+import { DashboardSearch } from '@/components/dashboard-search'
 
 
 const statusColors = {
@@ -65,12 +67,46 @@ export default function DashboardPage() {
   const [viewDialogOpen, setViewDialogOpen] = useState(false)
   const [statusDialogOpen, setStatusDialogOpen] = useState(false)
   const [selectedBooking, setSelectedBooking] = useState<BookingWithService | null>(null)
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
+  const { searchQuery } = useSearch()
 
   const today = new Date().toISOString().split('T')[0]
-  const todaysCollections = bookings.filter(booking => booking.collection_date === today)
-  const pendingBookings = bookings.filter(booking => booking.status === 'pending')
-  const processingBookings = bookings.filter(booking => booking.status === 'processing')
-  const totalRevenue = bookings.reduce((sum, booking) => {
+  
+  // Filter bookings by search query (customer name or phone)
+  const filteredBookings = bookings.filter(booking => {
+    if (!searchQuery.trim()) return true
+    
+    const fullName = `${booking.first_name} ${booking.last_name}`.toLowerCase()
+    const phone = booking.phone.toLowerCase()
+    const query = searchQuery.toLowerCase()
+    
+    return fullName.includes(query) || phone.includes(query)
+  })
+  
+  const todaysCollections = filteredBookings
+    .filter(booking => booking.collection_date === today)
+    .sort((a, b) => {
+      // Check if bookings are completed and paid
+      const aCompletedAndPaid = a.status === 'completed' && a.payment_method && a.payment_method !== 'Not Paid'
+      const bCompletedAndPaid = b.status === 'completed' && b.payment_method && b.payment_method !== 'Not Paid'
+      
+      // Primary sort: completed and paid bookings go to the top
+      if (aCompletedAndPaid && !bCompletedAndPaid) return -1
+      if (!aCompletedAndPaid && bCompletedAndPaid) return 1
+      
+      // Secondary sort by collection_date for bookings in the same category
+      const dateComparison = new Date(a.collection_date).getTime() - new Date(b.collection_date).getTime()
+      if (dateComparison !== 0) {
+        return sortOrder === 'asc' ? dateComparison : -dateComparison
+      }
+      
+      // Tertiary sort by created_at (time created) for fine-tuning
+      const timeComparison = new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      return sortOrder === 'asc' ? timeComparison : -timeComparison
+    })
+  const pendingBookings = filteredBookings.filter(booking => booking.status === 'pending')
+  const processingBookings = filteredBookings.filter(booking => booking.status === 'processing')
+  const totalRevenue = filteredBookings.reduce((sum, booking) => {
     // Use total_price if available, otherwise extract numeric value from service price range
     if (booking.total_price) {
       return sum + booking.total_price
@@ -136,16 +172,46 @@ export default function DashboardPage() {
     })
   }
 
+  const toggleSortOrder = () => {
+    setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')
+  }
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 w-full">
       {/* Page header */}
-      <div>
-        <h1 className="text-3xl font-bold text-white">
-          Dashboard
-        </h1>
-        <p className="text-gray-400 mt-2">
-          Welcome to your laundry service admin panel
-        </p>
+      <div className="text-center relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-blue-600/20 to-purple-600/20 blur-3xl"></div>
+        <div className="relative z-10">
+          <div className="inline-flex items-center justify-center mb-4">
+            <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse mr-3"></div>
+            <span className="text-purple-400 text-sm font-medium tracking-wider uppercase">Admin Portal</span>
+            <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse ml-3"></div>
+          </div>
+          <h1 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-purple-200 to-white mb-4 tracking-tight">
+            Dashboard
+          </h1>
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <div className="h-px bg-gradient-to-r from-transparent via-purple-500/50 to-transparent flex-1 max-w-32"></div>
+            <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+            <div className="h-px bg-gradient-to-r from-transparent via-purple-500/50 to-transparent flex-1 max-w-32"></div>
+          </div>
+          <p className="text-gray-300 text-lg font-medium max-w-2xl mx-auto leading-relaxed">
+            Welcome to your 
+            <span className="text-purple-400 font-semibold"> premium laundry service </span>
+            command center
+          </p>
+          <div className="mt-6 flex items-center justify-center gap-4">
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span>System Online</span>
+            </div>
+            <div className="w-px h-4 bg-gray-600"></div>
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <span>Real-time Updates</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Hero Promotional Card */}
@@ -256,12 +322,14 @@ export default function DashboardPage() {
       {/* Stats cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <Card className="bg-gray-800 border-gray-700">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="text-center space-y-2 pb-2">
+            <div className="flex justify-center">
+              <Calendar className="h-6 w-6 text-gray-400" />
+            </div>
             <CardTitle className="text-sm font-medium text-gray-300">Total Bookings</CardTitle>
-            <Calendar className="h-4 w-4 text-gray-400" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{bookings.length}</div>
+          <CardContent className="text-center">
+            <div className="text-2xl font-bold text-white">{filteredBookings.length}</div>
             <p className="text-xs text-gray-400">
               All time bookings
             </p>
@@ -269,11 +337,13 @@ export default function DashboardPage() {
         </Card>
 
         <Card className="border-orange-500 bg-orange-900/20">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="text-center space-y-2 pb-2">
+            <div className="flex justify-center">
+              <AlertCircle className="h-6 w-6 text-orange-400" />
+            </div>
             <CardTitle className="text-sm font-medium text-orange-200">Today&apos;s Collections</CardTitle>
-            <AlertCircle className="h-4 w-4 text-orange-400" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="text-center">
             <div className="text-2xl font-bold text-orange-100">{todaysCollections.length}</div>
             <p className="text-xs text-orange-300">
               Requires immediate attention
@@ -282,11 +352,13 @@ export default function DashboardPage() {
         </Card>
 
         <Card className="bg-gray-800 border-gray-700">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="text-center space-y-2 pb-2">
+            <div className="flex justify-center">
+              <Users className="h-6 w-6 text-gray-400" />
+            </div>
             <CardTitle className="text-sm font-medium text-gray-300">Pending Orders</CardTitle>
-            <Users className="h-4 w-4 text-gray-400" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="text-center">
             <div className="text-2xl font-bold text-white">{pendingBookings.length + processingBookings.length}</div>
             <p className="text-xs text-gray-400">
               Need processing
@@ -295,11 +367,13 @@ export default function DashboardPage() {
         </Card>
 
         <Card className="bg-gray-800 border-gray-700">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="text-center space-y-2 pb-2">
+            <div className="flex justify-center">
+              <TrendingUp className="h-6 w-6 text-gray-400" />
+            </div>
             <CardTitle className="text-sm font-medium text-gray-300">Total Revenue</CardTitle>
-            <TrendingUp className="h-4 w-4 text-gray-400" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="text-center">
             <div className="text-2xl font-bold text-white">R{totalRevenue.toFixed(2)}</div>
             <p className="text-xs text-gray-400">
               From all bookings
@@ -308,54 +382,99 @@ export default function DashboardPage() {
         </Card>
       </div>
 
+      {/* Search Bar */}
+      <div className="w-full">
+        <DashboardSearch />
+      </div>
+
       {/* Today&apos;s Collections - Prominent Display */}
-      {todaysCollections.length > 0 && (
-        <Card className="border-orange-500 bg-orange-900/20">
+      <Card className="bg-gray-800 border-gray-700">
           <CardHeader>
-            <CardTitle className="text-orange-100 flex items-center text-lg sm:text-xl">
-              <AlertCircle className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-              Today&apos;s Collections ({todaysCollections.length})
-            </CardTitle>
-            <CardDescription className="text-orange-300 text-sm sm:text-base">
-              These bookings are scheduled for collection today - action required
-            </CardDescription>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <CardTitle className="text-lg sm:text-xl text-white flex items-center">
+                  <AlertCircle className="mr-2 h-4 w-4 sm:h-5 sm:w-5 text-orange-400" />
+                  Today&apos;s Collections ({todaysCollections.length})
+                  {searchQuery && (
+                    <Badge variant="outline" className="ml-2 text-gray-300 border-gray-400">
+                      Filtered
+                    </Badge>
+                  )}
+                </CardTitle>
+                <CardDescription className="text-sm sm:text-base text-gray-400">
+                  {searchQuery ? `Showing ${todaysCollections.length} of ${bookings.length} collections` : 'Bookings scheduled for collection today - action required'}
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="rounded-md border border-orange-500 overflow-x-auto">
+            <div className="rounded-md border border-gray-700 overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-orange-900/30">
-                    <TableHead className="text-orange-100 whitespace-nowrap">Customer</TableHead>
-                    <TableHead className="text-orange-100 whitespace-nowrap hidden sm:table-cell">Service</TableHead>
-                    <TableHead className="text-orange-100 whitespace-nowrap hidden md:table-cell">Phone</TableHead>
-                    <TableHead className="text-orange-100 whitespace-nowrap">Status</TableHead>
-                    <TableHead className="text-orange-100 whitespace-nowrap hidden sm:table-cell">Weight</TableHead>
-                    <TableHead className="text-orange-100 whitespace-nowrap">Amount</TableHead>
-                    <TableHead className="text-orange-100 whitespace-nowrap hidden lg:table-cell">Payment</TableHead>
-                    <TableHead className="text-orange-100 text-right whitespace-nowrap">Actions</TableHead>
+                  <TableRow className="bg-gray-700/50">
+                    <TableHead className="whitespace-nowrap text-gray-300">Customer</TableHead>
+                    <TableHead className="whitespace-nowrap hidden sm:table-cell text-gray-300">Service</TableHead>
+                    <TableHead className="whitespace-nowrap hidden md:table-cell text-gray-300">Phone</TableHead>
+                    <TableHead className="whitespace-nowrap text-gray-300">Status</TableHead>
+                    <TableHead className="whitespace-nowrap hidden sm:table-cell text-gray-300">Weight</TableHead>
+                    <TableHead className="whitespace-nowrap text-gray-300">Amount</TableHead>
+                    <TableHead className="whitespace-nowrap hidden lg:table-cell text-gray-300">Payment</TableHead>
+                    <TableHead className="whitespace-nowrap text-gray-300">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={toggleSortOrder}
+                        className="h-auto p-0 text-gray-300 hover:text-white hover:bg-gray-600/30"
+                      >
+                        <div className="flex items-center gap-1">
+                          <span>Collection Date</span>
+                          {sortOrder === 'asc' ? (
+                            <ArrowUp className="h-3 w-3" />
+                          ) : (
+                            <ArrowDown className="h-3 w-3" />
+                          )}
+                        </div>
+                      </Button>
+                    </TableHead>
+                    <TableHead className="text-right whitespace-nowrap text-gray-300">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-gray-300">
+                      <TableCell colSpan={9} className="text-center py-8 text-gray-300">
                         Loading today&apos;s collections...
                       </TableCell>
                     </TableRow>
                   ) : todaysCollections.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-gray-300">
+                      <TableCell colSpan={9} className="text-center py-8 text-gray-300">
                         No collections scheduled for today
                       </TableCell>
                     </TableRow>
                   ) : (
                     todaysCollections.map((booking) => {
                       const StatusIcon = statusIcons[booking.status as keyof typeof statusIcons]
+                      const isCompletedAndPaid = booking.status === 'completed' && booking.payment_method && booking.payment_method !== 'Not Paid'
                       return (
-                        <TableRow key={booking.id} className="hover:bg-orange-900/10">
+                        <TableRow 
+                          key={booking.id} 
+                          className={`hover:bg-orange-900/10 ${
+                            isCompletedAndPaid 
+                              ? 'bg-green-900/20 border-green-500/30' 
+                              : ''
+                          }`}
+                        >
                           <TableCell className="font-medium text-white">
                             <div className="flex flex-col">
-                              <span>{booking.first_name} {booking.last_name}</span>
+                              <div className="flex items-center gap-2">
+                                <span>{booking.first_name} {booking.last_name}</span>
+                                {isCompletedAndPaid && (
+                                  <Badge className="bg-green-600 text-white text-xs px-1 py-0">
+                                    ✓ Paid
+                                  </Badge>
+                                )}
+                              </div>
                               <span className="text-xs text-orange-300 sm:hidden">{booking.service.name}</span>
                               <span className="text-xs text-orange-300 md:hidden">{booking.phone}</span>
                             </div>
@@ -389,7 +508,19 @@ export default function DashboardPage() {
                             )}
                           </TableCell>
                           <TableCell className="hidden lg:table-cell">
-                            {renderPaymentMethod(booking.payment_method)}
+                            <div className={isCompletedAndPaid ? 'text-green-400' : ''}>
+                              {renderPaymentMethod(booking.payment_method)}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-gray-300">
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium text-orange-200">
+                                {new Date(booking.collection_date).toLocaleDateString()}
+                              </span>
+                              <span className="text-xs text-orange-400">
+                                {new Date(booking.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end space-x-1 sm:space-x-2">
@@ -419,16 +550,22 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
-      )}
 
       {/* All Bookings Table */}
       <Card className="bg-gray-800 border-gray-700">
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <CardTitle className="text-lg sm:text-xl text-white">All Bookings</CardTitle>
+              <CardTitle className="text-lg sm:text-xl text-white flex items-center">
+                All Bookings
+                {searchQuery && (
+                  <Badge variant="outline" className="ml-2 text-gray-300 border-gray-400">
+                    Filtered
+                  </Badge>
+                )}
+              </CardTitle>
               <CardDescription className="text-sm sm:text-base text-gray-400">
-                Complete list of all bookings in your system
+                {searchQuery ? `Showing ${filteredBookings.length} of ${bookings.length} bookings` : 'Complete list of all bookings in your system'}
               </CardDescription>
             </div>
             <Link href="/dashboard/bookings">
@@ -461,14 +598,14 @@ export default function DashboardPage() {
                       Loading bookings...
                     </TableCell>
                   </TableRow>
-                ) : bookings.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-gray-300">
-                      No bookings found
-                    </TableCell>
-                  </TableRow>
+                ) : filteredBookings.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={9} className="text-center py-8 text-gray-300">
+                        {searchQuery ? 'No bookings found matching your search' : 'No bookings found'}
+                      </TableCell>
+                    </TableRow>
                 ) : (
-                  bookings.map((booking) => {
+                  filteredBookings.map((booking) => {
                     const StatusIcon = statusIcons[booking.status as keyof typeof statusIcons]
                     const isToday = booking.collection_date === today
                     return (
