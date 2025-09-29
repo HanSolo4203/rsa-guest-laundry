@@ -7,11 +7,12 @@ import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
-import { Search, Filter, Plus, Settings } from 'lucide-react'
+import { Search, Filter, Plus, Settings, CreditCard, Banknote } from 'lucide-react'
 import { getBookings } from '@/lib/supabase/services'
 import { BookingWithService } from '@/lib/types/database'
 import { BookingStatusDialog } from '@/components/booking-status-dialog'
 import { CustomerDetailsDialog } from '@/components/customer-details-dialog'
+import { formatPrice } from '@/lib/pricing'
 
 
 const statusColors = {
@@ -21,6 +22,27 @@ const statusColors = {
   processing: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
   completed: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
   cancelled: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+}
+
+const renderPaymentMethod = (paymentMethod: string | null | undefined) => {
+  if (!paymentMethod) {
+    return (
+      <div className="flex items-center gap-1">
+        <span className="text-red-500 text-xs">Not Paid</span>
+      </div>
+    )
+  }
+  
+  return (
+    <div className="flex items-center gap-1">
+      {paymentMethod === 'card' ? (
+        <CreditCard className="h-3 w-3 text-blue-500" />
+      ) : (
+        <Banknote className="h-3 w-3 text-green-500" />
+      )}
+      <span className="text-xs text-slate-600 dark:text-slate-300 capitalize">{paymentMethod}</span>
+    </div>
+  )
 }
 
 export default function BookingsPage() {
@@ -144,20 +166,22 @@ export default function BookingsPage() {
                   <TableHead className="whitespace-nowrap hidden md:table-cell">Collection</TableHead>
                   <TableHead className="whitespace-nowrap hidden lg:table-cell">Departure</TableHead>
                   <TableHead className="whitespace-nowrap">Status</TableHead>
+                  <TableHead className="whitespace-nowrap hidden sm:table-cell">Weight</TableHead>
                   <TableHead className="whitespace-nowrap">Price</TableHead>
+                  <TableHead className="whitespace-nowrap hidden xl:table-cell">Payment</TableHead>
                   <TableHead className="text-right whitespace-nowrap">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8">
+                    <TableCell colSpan={9} className="text-center py-8">
                       Loading bookings...
                     </TableCell>
                   </TableRow>
                 ) : bookings.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8">
+                    <TableCell colSpan={9} className="text-center py-8">
                       No bookings found
                     </TableCell>
                   </TableRow>
@@ -181,17 +205,29 @@ export default function BookingsPage() {
                           <span className="sm:hidden">{booking.status.charAt(0).toUpperCase()}</span>
                         </Badge>
                       </TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        {booking.weight_kg ? (
+                          <span className="text-sm sm:text-base font-medium">{booking.weight_kg} kg</span>
+                        ) : (
+                          <span className="text-sm text-slate-400">-</span>
+                        )}
+                      </TableCell>
                       <TableCell>
-                        {booking.total_price ? (
+                        {booking.status === 'pending' ? (
+                          <span className="text-sm sm:text-base text-slate-400">R0.00</span>
+                        ) : (booking.status === 'processing' || booking.status === 'completed') && booking.total_price ? (
                           <div>
-                            <div className="font-semibold text-green-600 text-sm sm:text-base">${booking.total_price.toFixed(2)}</div>
+                            <div className="font-semibold text-green-600 text-sm sm:text-base">{formatPrice(booking.total_price)}</div>
                             <div className="text-xs text-muted-foreground">
-                              (Est: ${booking.service.price.toFixed(2)})
+                              (Range: {booking.service.price})
                             </div>
                           </div>
                         ) : (
-                          <span className="text-sm sm:text-base">${booking.service.price.toFixed(2)}</span>
+                          <span className="text-sm sm:text-base text-slate-400">R0.00</span>
                         )}
+                      </TableCell>
+                      <TableCell className="hidden xl:table-cell">
+                        {renderPaymentMethod(booking.payment_method)}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-1 sm:space-x-2">

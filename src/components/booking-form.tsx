@@ -11,6 +11,7 @@ import { toast } from 'sonner'
 import { bookingSchema, type BookingFormData } from '@/lib/schemas/booking'
 import { createBooking } from '@/lib/supabase/services'
 import { Service } from '@/lib/types/database'
+import { calculatePrice, formatPrice } from '@/lib/pricing'
 
 interface BookingFormProps {
   services: Service[]
@@ -50,6 +51,8 @@ function DefaultDatePicker({
 
 export function BookingForm({ services }: BookingFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [weight, setWeight] = useState<number | undefined>(undefined)
+  const [selectedService, setSelectedService] = useState<string>('')
   
   // Set default dates
   const today = new Date()
@@ -69,6 +72,9 @@ export function BookingForm({ services }: BookingFormProps) {
     },
   })
 
+  // Calculate price when weight or service changes
+  const calculatedPrice = weight && selectedService ? calculatePrice(selectedService, weight) : 0
+
   const onSubmit = async (data: BookingFormData) => {
     setIsSubmitting(true)
     
@@ -76,6 +82,11 @@ export function BookingForm({ services }: BookingFormProps) {
       await createBooking(data)
       toast.success('Booking created successfully!')
       form.reset()
+      setWeight(undefined) // Reset weight field
+      setSelectedService('') // Reset selected service
+      
+      // Trigger a custom event to refresh the sidebar
+      window.dispatchEvent(new CustomEvent('bookingAdded'))
     } catch (error) {
       toast.error('Failed to create booking. Please try again.')
       console.error('Booking error:', error)
@@ -85,7 +96,7 @@ export function BookingForm({ services }: BookingFormProps) {
   }
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 sm:space-y-6" onKeyDown={(e) => {
           // Prevent form submission on Enter key press in input fields
@@ -97,7 +108,7 @@ export function BookingForm({ services }: BookingFormProps) {
           }
         }}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
-            {/* Left Column */}
+            {/* Row 1: First Name | Last Name */}
             <div className="space-y-3 sm:space-y-5">
               <FormField
                 control={form.control}
@@ -124,56 +135,8 @@ export function BookingForm({ services }: BookingFormProps) {
                   </FormItem>
                 )}
               />
-
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem className="min-h-[72px] sm:min-h-[84px]">
-                    <FormLabel className="text-white text-base sm:text-lg font-normal">Phone</FormLabel>
-                    <FormControl>
-                      <div className="relative hide-autofill-icons">
-                        <PhoneIcon className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-white" />
-                        <input
-                          type="tel"
-                          placeholder=""
-                          autoComplete="off"
-                          inputMode="tel"
-                          className="w-full bg-transparent border-0 border-b border-white/30 text-white placeholder-transparent focus:border-white focus:outline-none py-2 sm:py-3 text-lg sm:text-xl pl-8 sm:pl-9"
-                          {...field}
-                        />
-                        <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/30"></div>
-                      </div>
-                    </FormControl>
-                    <div className="min-h-[20px]">
-                      <FormMessage className="text-red-400" />
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="collection_date"
-                render={({ field }) => (
-                  <FormItem className="min-h-[72px] sm:min-h-[84px]">
-                    <FormLabel className="text-white text-base sm:text-lg font-normal">Collection Date</FormLabel>
-                    <FormControl>
-                      <DefaultDatePicker
-                        value={field.value}
-                        onChange={field.onChange}
-                        placeholder="Select collection date"
-                      />
-                    </FormControl>
-                    <div className="min-h-[20px]">
-                      <FormMessage className="text-red-400" />
-                    </div>
-                  </FormItem>
-                )}
-              />
             </div>
 
-            {/* Right Column */}
             <div className="space-y-3 sm:space-y-5">
               <FormField
                 control={form.control}
@@ -200,7 +163,39 @@ export function BookingForm({ services }: BookingFormProps) {
                   </FormItem>
                 )}
               />
+            </div>
 
+            {/* Row 2: Phone | Service Type */}
+            <div className="space-y-3 sm:space-y-5">
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem className="min-h-[72px] sm:min-h-[84px]">
+                    <FormLabel className="text-white text-base sm:text-lg font-normal">Phone</FormLabel>
+                    <FormControl>
+                      <div className="relative hide-autofill-icons">
+                        <PhoneIcon className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                        <input
+                          type="tel"
+                          placeholder=""
+                          autoComplete="off"
+                          inputMode="tel"
+                          className="w-full bg-transparent border-0 border-b border-white/30 text-white placeholder-transparent focus:border-white focus:outline-none py-2 sm:py-3 text-lg sm:text-xl pl-8 sm:pl-9"
+                          {...field}
+                        />
+                        <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/30"></div>
+                      </div>
+                    </FormControl>
+                    <div className="min-h-[20px]">
+                      <FormMessage className="text-red-400" />
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="space-y-3 sm:space-y-5">
               <FormField
                 control={form.control}
                 name="service_id"
@@ -210,14 +205,18 @@ export function BookingForm({ services }: BookingFormProps) {
                     <FormControl>
                       <div className="relative">
                         <select
-                          className="w-full bg-transparent border-0 border-b border-white/30 text-white focus:border-white focus:outline-none py-2 sm:py-3 text-lg sm:text-xl appearance-none cursor-pointer"
+                          className="w-full bg-transparent border-0 border-b border-white/30 text-white focus:border-white focus:outline-none py-2 sm:py-3 text-base sm:text-lg appearance-none cursor-pointer pr-8"
                           value={field.value}
-                          onChange={field.onChange}
+                          onChange={(e) => {
+                            field.onChange(e)
+                            const service = services.find(s => s.id === e.target.value)
+                            setSelectedService(service?.name || '')
+                          }}
                         >
                           <option value="" className="bg-slate-900 text-white">Laundry Service</option>
                           {services.map((service) => (
                             <option key={service.id} value={service.id} className="bg-slate-900 text-white">
-                              {service.name} - ${service.price}
+                              {service.name} - {service.price}
                             </option>
                           ))}
                         </select>
@@ -235,7 +234,32 @@ export function BookingForm({ services }: BookingFormProps) {
                   </FormItem>
                 )}
               />
+            </div>
 
+            {/* Row 3: Collection Date | Departure Date */}
+            <div className="space-y-3 sm:space-y-5">
+              <FormField
+                control={form.control}
+                name="collection_date"
+                render={({ field }) => (
+                  <FormItem className="min-h-[72px] sm:min-h-[84px]">
+                    <FormLabel className="text-white text-base sm:text-lg font-normal">Collection Date</FormLabel>
+                    <FormControl>
+                      <DefaultDatePicker
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Select collection date"
+                      />
+                    </FormControl>
+                    <div className="min-h-[20px]">
+                      <FormMessage className="text-red-400" />
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="space-y-3 sm:space-y-5">
               <FormField
                 control={form.control}
                 name="departure_date"
@@ -255,6 +279,44 @@ export function BookingForm({ services }: BookingFormProps) {
                   </FormItem>
                 )}
               />
+            </div>
+          </div>
+
+          {/* Weight Input Field - Full Width */}
+          <div className="pt-2 sm:pt-3">
+            <div className="min-h-[72px] sm:min-h-[84px]">
+              <div className="flex items-end gap-4">
+                <div className="flex-1">
+                  <label className="text-white text-base sm:text-lg font-normal block mb-2">Weight (kg)</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0.1"
+                      placeholder="0.0"
+                      value={weight || ''}
+                      onChange={(e) => setWeight(parseFloat(e.target.value) || undefined)}
+                      className="w-full bg-transparent border-0 border-b border-white/30 text-white placeholder-white/60 focus:border-white focus:outline-none py-2 sm:py-3 text-lg sm:text-xl"
+                    />
+                    <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/30"></div>
+                  </div>
+                  <p className="text-xs text-white/70 mt-1">
+                    Enter the estimated weight of your laundry
+                  </p>
+                </div>
+                {weight && weight > 0 && selectedService && calculatedPrice > 0 && (
+                  <div className="flex-shrink-0">
+                    <div className="p-3 bg-green-900/30 border border-green-700 rounded text-sm min-w-[200px]">
+                      <p className="text-green-300 font-semibold">
+                        {formatPrice(calculatedPrice)}
+                      </p>
+                      <p className="text-green-200/80 text-xs mt-1">
+                        Based on {weight}kg
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

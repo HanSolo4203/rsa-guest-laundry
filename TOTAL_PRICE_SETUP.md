@@ -107,7 +107,7 @@ The dashboard tables show:
 2. Find booking with status "processing" or "collected"
 3. Click "Update" button
 4. Change status to "completed"
-5. Enter final price (e.g., $18.50 instead of estimated $15.00)
+5. Enter final price (e.g., R18.50 instead of estimated R15.00)
 6. Click "Update Status"
 7. Dashboard shows final price prominently
 

@@ -16,7 +16,6 @@ import {
   LogOut,
   Search,
   Bell,
-  Star,
   BarChart3,
   MessageSquare
 } from 'lucide-react'
@@ -25,12 +24,6 @@ import { useAuth } from '@/contexts/auth-context'
 import { toast } from 'sonner'
 
 const navigation = [
-  {
-    name: 'Dashboard',
-    href: '/dashboard',
-    icon: Star,
-    current: false,
-  },
   {
     name: 'Home',
     href: '/dashboard',
@@ -147,7 +140,7 @@ export default function DashboardLayout({
       <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-16 lg:flex-col">
         <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-800 border-r border-gray-700">
           <div className="flex h-16 shrink-0 items-center justify-center border-b border-gray-700">
-            <Star className="h-8 w-8 text-white" />
+            <Home className="h-8 w-8 text-white" />
           </div>
           <nav className="flex flex-1 flex-col px-2 pb-4">
             <ul className="flex flex-1 flex-col gap-y-2">

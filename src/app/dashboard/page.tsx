@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Calendar, Users, TrendingUp, Clock, CheckCircle, AlertCircle } from 'lucide-react'
+import { Calendar, Users, TrendingUp, Clock, CheckCircle, AlertCircle, CreditCard, Banknote } from 'lucide-react'
 import Link from 'next/link'
 import { CollectionNotificationBanner } from '@/components/collection-notification-banner'
 import { CustomerDetailsDialog } from '@/components/customer-details-dialog'
@@ -17,7 +17,8 @@ import { BookingWithService } from '@/lib/types/database'
 const statusColors = {
   pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
   confirmed: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-  in_progress: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
+  collected: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300',
+  processing: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
   completed: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
   cancelled: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
 }
@@ -25,9 +26,37 @@ const statusColors = {
 const statusIcons = {
   pending: Clock,
   confirmed: CheckCircle,
-  in_progress: AlertCircle,
+  collected: CheckCircle,
+  processing: AlertCircle,
   completed: CheckCircle,
   cancelled: AlertCircle,
+}
+
+const renderPaymentMethod = (paymentMethod: string | null | undefined) => {
+  if (!paymentMethod) {
+    return (
+      <div className="flex items-center gap-1">
+        <span className="text-red-400 text-xs">Not Paid</span>
+      </div>
+    )
+  }
+  
+  return (
+    <div className="flex items-center gap-1">
+      {paymentMethod === 'card' ? (
+        <CreditCard className="h-3 w-3 text-blue-400" />
+      ) : (
+        <Banknote className="h-3 w-3 text-green-400" />
+      )}
+      <span className="text-xs text-gray-300 capitalize">{paymentMethod}</span>
+    </div>
+  )
+}
+
+// Helper function to extract numeric price from price range string
+const extractNumericPrice = (priceString: string): number => {
+  const match = priceString.match(/R(\d+(?:\.\d{2})?)/)
+  return match ? parseFloat(match[1]) : 0
 }
 
 export default function DashboardPage() {
@@ -40,8 +69,15 @@ export default function DashboardPage() {
   const today = new Date().toISOString().split('T')[0]
   const todaysCollections = bookings.filter(booking => booking.collection_date === today)
   const pendingBookings = bookings.filter(booking => booking.status === 'pending')
-  const inProgressBookings = bookings.filter(booking => booking.status === 'processing')
-  const totalRevenue = bookings.reduce((sum, booking) => sum + (booking.total_price || booking.service.price), 0)
+  const processingBookings = bookings.filter(booking => booking.status === 'processing')
+  const totalRevenue = bookings.reduce((sum, booking) => {
+    // Use total_price if available, otherwise extract numeric value from service price range
+    if (booking.total_price) {
+      return sum + booking.total_price
+    }
+    
+    return sum + extractNumericPrice(booking.service.price)
+  }, 0)
 
   const fetchBookings = async () => {
     try {
@@ -57,6 +93,25 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchBookings()
+    
+    // Listen for new booking events from the main page
+    const handleBookingAdded = () => {
+      // Preserve scroll position before refresh
+      const scrollPosition = window.pageYOffset || document.documentElement.scrollTop
+      
+      fetchBookings().then(() => {
+        // Restore scroll position after data is loaded
+        setTimeout(() => {
+          window.scrollTo(0, scrollPosition)
+        }, 100)
+      })
+    }
+    
+    window.addEventListener('bookingAdded', handleBookingAdded)
+    
+    return () => {
+      window.removeEventListener('bookingAdded', handleBookingAdded)
+    }
   }, [])
 
   const handleViewBooking = (booking: BookingWithService) => {
@@ -70,7 +125,15 @@ export default function DashboardPage() {
   }
 
   const handleStatusUpdateSuccess = () => {
-    fetchBookings()
+    // Preserve scroll position before refresh
+    const scrollPosition = window.pageYOffset || document.documentElement.scrollTop
+    
+    fetchBookings().then(() => {
+      // Restore scroll position after data is loaded
+      setTimeout(() => {
+        window.scrollTo(0, scrollPosition)
+      }, 100)
+    })
   }
 
   return (
@@ -224,7 +287,7 @@ export default function DashboardPage() {
             <Users className="h-4 w-4 text-gray-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">{pendingBookings.length + inProgressBookings.length}</div>
+            <div className="text-2xl font-bold text-white">{pendingBookings.length + processingBookings.length}</div>
             <p className="text-xs text-gray-400">
               Need processing
             </p>
@@ -237,7 +300,7 @@ export default function DashboardPage() {
             <TrendingUp className="h-4 w-4 text-gray-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">${totalRevenue.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-white">R{totalRevenue.toFixed(2)}</div>
             <p className="text-xs text-gray-400">
               From all bookings
             </p>
@@ -266,20 +329,22 @@ export default function DashboardPage() {
                     <TableHead className="text-orange-100 whitespace-nowrap hidden sm:table-cell">Service</TableHead>
                     <TableHead className="text-orange-100 whitespace-nowrap hidden md:table-cell">Phone</TableHead>
                     <TableHead className="text-orange-100 whitespace-nowrap">Status</TableHead>
+                    <TableHead className="text-orange-100 whitespace-nowrap hidden sm:table-cell">Weight</TableHead>
                     <TableHead className="text-orange-100 whitespace-nowrap">Amount</TableHead>
+                    <TableHead className="text-orange-100 whitespace-nowrap hidden lg:table-cell">Payment</TableHead>
                     <TableHead className="text-orange-100 text-right whitespace-nowrap">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-gray-300">
+                      <TableCell colSpan={8} className="text-center py-8 text-gray-300">
                         Loading today&apos;s collections...
                       </TableCell>
                     </TableRow>
                   ) : todaysCollections.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-gray-300">
+                      <TableCell colSpan={8} className="text-center py-8 text-gray-300">
                         No collections scheduled for today
                       </TableCell>
                     </TableRow>
@@ -304,17 +369,27 @@ export default function DashboardPage() {
                               <span className="sm:hidden">{booking.status.charAt(0).toUpperCase()}</span>
                             </Badge>
                           </TableCell>
+                          <TableCell className="hidden sm:table-cell text-gray-300">
+                            {booking.weight_kg ? (
+                              <span className="text-sm font-medium text-orange-200">{booking.weight_kg} kg</span>
+                            ) : (
+                              <span className="text-sm text-orange-400">-</span>
+                            )}
+                          </TableCell>
                           <TableCell className="text-gray-300">
                             {booking.total_price ? (
                               <div>
-                                <div className="font-semibold text-green-400">${booking.total_price.toFixed(2)}</div>
+                                <div className="font-semibold text-green-400">R{booking.total_price.toFixed(2)}</div>
                                 <div className="text-xs text-gray-400">
-                                  (Est: ${booking.service.price.toFixed(2)})
+                                  (Est: R{extractNumericPrice(booking.service.price).toFixed(2)})
                                 </div>
                               </div>
                             ) : (
-                              <span>${booking.service.price.toFixed(2)}</span>
+                              <span>R{extractNumericPrice(booking.service.price).toFixed(2)}</span>
                             )}
+                          </TableCell>
+                          <TableCell className="hidden lg:table-cell">
+                            {renderPaymentMethod(booking.payment_method)}
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end space-x-1 sm:space-x-2">
@@ -373,20 +448,22 @@ export default function DashboardPage() {
                   <TableHead className="whitespace-nowrap hidden md:table-cell text-gray-300">Collection</TableHead>
                   <TableHead className="whitespace-nowrap hidden lg:table-cell text-gray-300">Departure</TableHead>
                   <TableHead className="whitespace-nowrap text-gray-300">Status</TableHead>
+                  <TableHead className="whitespace-nowrap hidden sm:table-cell text-gray-300">Weight</TableHead>
                   <TableHead className="whitespace-nowrap text-gray-300">Amount</TableHead>
+                  <TableHead className="whitespace-nowrap hidden xl:table-cell text-gray-300">Payment</TableHead>
                   <TableHead className="text-right whitespace-nowrap text-gray-300">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-gray-300">
+                    <TableCell colSpan={9} className="text-center py-8 text-gray-300">
                       Loading bookings...
                     </TableCell>
                   </TableRow>
                 ) : bookings.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-gray-300">
+                    <TableCell colSpan={9} className="text-center py-8 text-gray-300">
                       No bookings found
                     </TableCell>
                   </TableRow>
@@ -430,17 +507,27 @@ export default function DashboardPage() {
                             <span className="sm:hidden">{booking.status.charAt(0).toUpperCase()}</span>
                           </Badge>
                         </TableCell>
+                        <TableCell className="hidden sm:table-cell text-gray-300">
+                          {booking.weight_kg ? (
+                            <span className="text-sm font-medium text-gray-200">{booking.weight_kg} kg</span>
+                          ) : (
+                            <span className="text-sm text-gray-500">-</span>
+                          )}
+                        </TableCell>
                         <TableCell className="text-gray-300">
                           {booking.total_price ? (
                             <div>
-                              <div className="font-semibold text-green-400">${booking.total_price.toFixed(2)}</div>
+                              <div className="font-semibold text-green-400">R{booking.total_price.toFixed(2)}</div>
                               <div className="text-xs text-gray-400">
-                                (Est: ${booking.service.price.toFixed(2)})
+                                (Est: R{extractNumericPrice(booking.service.price).toFixed(2)})
                               </div>
                             </div>
                           ) : (
-                            <span>${booking.service.price.toFixed(2)}</span>
+                            <span>R{extractNumericPrice(booking.service.price).toFixed(2)}</span>
                           )}
+                        </TableCell>
+                        <TableCell className="hidden xl:table-cell">
+                          {renderPaymentMethod(booking.payment_method)}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end space-x-1 sm:space-x-2">

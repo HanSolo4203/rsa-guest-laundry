@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -31,12 +31,19 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { BookingWithService } from '@/lib/types/database'
 import { updateBookingStatus } from '@/lib/supabase/services'
+import { calculatePrice, formatPrice } from '@/lib/pricing'
 import { toast } from 'sonner'
 
 const statusUpdateSchema = z.object({
   status: z.string().min(1, 'Status is required'),
   total_price: z.number().min(0, 'Total price must be greater than or equal to 0').optional(),
+  weight_kg: z.number().min(0.1, 'Weight must be greater than 0').optional(),
 })
+
+// Function to calculate price based on weight and service name using the new pricing structure
+const calculatePriceFromWeight = (weightKg: number, serviceName: string): number => {
+  return calculatePrice(serviceName, weightKg)
+}
 
 type StatusUpdateFormData = z.infer<typeof statusUpdateSchema>
 
@@ -63,11 +70,33 @@ export function BookingStatusDialog({ open, onOpenChange, booking, onSuccess }: 
     defaultValues: {
       status: booking?.status || '',
       total_price: booking?.total_price || 0,
+      weight_kg: booking?.weight_kg || 0,
     },
   })
 
   const selectedStatus = form.watch('status')
+  const selectedWeight = form.watch('weight_kg')
   const showPriceField = selectedStatus === 'completed'
+  const showWeightField = selectedStatus === 'processing'
+
+  // Auto-calculate price when weight is entered for processing status
+  useEffect(() => {
+    if (selectedStatus === 'processing' && selectedWeight && selectedWeight > 0 && booking) {
+      const calculatedPrice = calculatePriceFromWeight(selectedWeight, booking.service.name)
+      form.setValue('total_price', calculatedPrice)
+    }
+  }, [selectedStatus, selectedWeight, booking, form])
+
+  // Update form values when booking changes
+  useEffect(() => {
+    if (booking) {
+      form.reset({
+        status: booking.status,
+        total_price: booking.total_price || 0,
+        weight_kg: booking.weight_kg || 0,
+      })
+    }
+  }, [booking, form])
 
   const onSubmit = async (data: StatusUpdateFormData) => {
     if (!booking) return
@@ -75,10 +104,17 @@ export function BookingStatusDialog({ open, onOpenChange, booking, onSuccess }: 
     try {
       setSubmitting(true)
       
+      // Calculate price if status is processing and weight is provided
+      let finalPrice = data.total_price
+      if (data.status === 'processing' && data.weight_kg && data.weight_kg > 0) {
+        finalPrice = calculatePriceFromWeight(data.weight_kg, booking.service.name)
+      }
+      
       await updateBookingStatus(
         booking.id,
         data.status,
-        data.total_price
+        finalPrice,
+        data.weight_kg
       )
       
       toast.success('Booking status updated successfully')
@@ -116,7 +152,7 @@ export function BookingStatusDialog({ open, onOpenChange, booking, onSuccess }: 
                 <h4 className="font-medium text-sm text-white/80">Service Details</h4>
                 <div className="text-xs sm:text-sm space-y-1 mt-1">
                   <p><strong>Service:</strong> {booking.service.name}</p>
-                  <p><strong>Original Price:</strong> ${booking.service.price.toFixed(2)}</p>
+                  <p><strong>Price Range:</strong> {booking.service.price}</p>
                   <p><strong>Collection:</strong> {new Date(booking.collection_date).toLocaleDateString()}</p>
                   <p><strong>Departure:</strong> {new Date(booking.departure_date).toLocaleDateString()}</p>
                 </div>
@@ -128,7 +164,7 @@ export function BookingStatusDialog({ open, onOpenChange, booking, onSuccess }: 
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-white/90">Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger className="bg-gray-800 text-white border-gray-700">
                           <SelectValue placeholder="Select status" />
@@ -147,13 +183,54 @@ export function BookingStatusDialog({ open, onOpenChange, booking, onSuccess }: 
                 )}
               />
 
+              {showWeightField && (
+                <FormField
+                  control={form.control}
+                  name="weight_kg"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-white/90">Weight (kg)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          min="0.1"
+                          placeholder="0.0"
+                          {...field}
+                          value={field.value || ''}
+                          onChange={(e) => {
+                            const value = e.target.value
+                            field.onChange(value === '' ? 0 : parseFloat(value) || 0)
+                          }}
+                          className="bg-gray-800 text-white border-gray-700"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                      <p className="text-xs text-white/70">
+                        Enter the weight of the laundry in kilograms
+                      </p>
+                      {selectedWeight && selectedWeight > 0 && booking && (
+                        <div className="mt-2 p-2 bg-green-900/30 border border-green-700 rounded text-sm">
+                          <p className="text-green-300">
+                            <strong>Calculated Price:</strong> {formatPrice(calculatePriceFromWeight(selectedWeight, booking.service.name))}
+                          </p>
+                          <p className="text-green-200/80 text-xs mt-1">
+                            Based on {selectedWeight}kg and service: {booking.service.name}
+                          </p>
+                        </div>
+                      )}
+                    </FormItem>
+                  )}
+                />
+              )}
+
               {showPriceField && (
                 <FormField
                   control={form.control}
                   name="total_price"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-white/90">Total Price ($)</FormLabel>
+                      <FormLabel className="text-white/90">Total Price (R)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -161,7 +238,11 @@ export function BookingStatusDialog({ open, onOpenChange, booking, onSuccess }: 
                           min="0"
                           placeholder="0.00"
                           {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          value={field.value || ''}
+                          onChange={(e) => {
+                            const value = e.target.value
+                            field.onChange(value === '' ? 0 : parseFloat(value) || 0)
+                          }}
                           className="bg-gray-800 text-white border-gray-700"
                         />
                       </FormControl>

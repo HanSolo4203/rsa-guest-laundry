@@ -568,3 +568,39 @@ select:-webkit-autofill:focus {
     transform: translateX(90px);
   }
 }
+
+/* Custom scrollbar styling for sidebar - positioned on the left */
+.sidebar-scroll {
+  direction: rtl; /* Reverse text direction to move scrollbar to left */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  padding-left: 8px; /* Add padding to separate scrollbar from content */
+  margin-left: -8px; /* Offset the padding to keep content aligned */
+}
+
+.sidebar-scroll > * {
+  direction: ltr; /* Reset text direction for content */
+}
+
+/* Hide scrollbar completely on Safari */
+.sidebar-scroll::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}
+
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+/* Ensure no hover effects on Safari */
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: transparent;
+}
+
+.sidebar-scroll::-webkit-scrollbar-corner {
+  background: transparent;
+}

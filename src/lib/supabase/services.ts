@@ -19,7 +19,7 @@ export async function getServices(): Promise<Service[]> {
 
 export async function createService(serviceData: {
   name: string
-  price: number
+  price: string
 }): Promise<Service> {
   const supabase = createClient()
   
@@ -39,7 +39,7 @@ export async function createService(serviceData: {
 
 export async function updateService(id: string, serviceData: {
   name: string
-  price: number
+  price: string
 }): Promise<Service> {
   const supabase = createClient()
   
@@ -111,15 +111,25 @@ export async function getBookingsByCollectionDate(date: string): Promise<Booking
   return data || []
 }
 
-export async function updateBookingStatus(id: string, status: string, totalPrice?: number): Promise<BookingWithService> {
+export async function updateBookingStatus(id: string, status: string, totalPrice?: number, weightKg?: number): Promise<BookingWithService> {
   const supabase = createClient()
   
-  const updateData: { status: string; total_price?: number } = { status }
+  const updateData: { status: string; total_price?: number; completed_at?: string; weight_kg?: number } = { status }
+  
+  // Set completed_at timestamp when status is updated to 'completed'
+  if (status === 'completed') {
+    updateData.completed_at = new Date().toISOString()
+  }
+  
   if (totalPrice !== undefined) {
     updateData.total_price = totalPrice
   }
   
-  console.log('Updating booking with data:', { id, status, totalPrice, updateData })
+  if (weightKg !== undefined) {
+    updateData.weight_kg = weightKg
+  }
+  
+  console.log('Updating booking with data:', { id, status, totalPrice, weightKg, updateData })
   
   const { data, error } = await supabase
     .from('bookings')
@@ -143,6 +153,56 @@ export async function updateBookingStatus(id: string, status: string, totalPrice
   }
   
   console.log('Successfully updated booking:', data)
+  return data
+}
+
+export async function updateBookingPaymentMethod(id: string, paymentMethod: 'card' | 'cash'): Promise<BookingWithService> {
+  const supabase = createClient()
+  
+  const { data, error } = await supabase
+    .from('bookings')
+    .update({ payment_method: paymentMethod })
+    .eq('id', id)
+    .select(`
+      *,
+      service:services(*)
+    `)
+    .single()
+  
+  if (error) {
+    console.error('Error updating booking payment method:', error)
+    throw new Error(`Failed to update payment method: ${error.message}`)
+  }
+  
+  return data
+}
+
+export async function updateBooking(id: string, bookingData: {
+  first_name?: string
+  last_name?: string
+  phone?: string
+  service_id?: string
+  collection_date?: string
+  departure_date?: string
+  additional_details?: string
+}): Promise<BookingWithService> {
+  const supabase = createClient()
+  
+  const { data, error } = await supabase
+    .from('bookings')
+    .update(bookingData)
+    .eq('id', id)
+    .select(`
+      *,
+      service:services(*)
+    `)
+    .single()
+  
+  if (error) {
+    console.error('Error updating booking:', error)
+    throw new Error('Failed to update booking')
+  }
+  
   return data
 }
 

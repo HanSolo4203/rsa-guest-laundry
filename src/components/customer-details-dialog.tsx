@@ -8,8 +8,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
-import { Calendar, Phone, User, Package, DollarSign } from 'lucide-react'
+import { Calendar, Phone, User, Package, DollarSign, Weight } from 'lucide-react'
 import { BookingWithService } from '@/lib/types/database'
+import { formatPrice } from '@/lib/pricing'
 
 interface CustomerDetailsDialogProps {
   open: boolean
@@ -107,25 +108,37 @@ export function CustomerDetailsDialog({ open, onOpenChange, booking }: CustomerD
               <div>
                 <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
                   <DollarSign className="h-3 w-3" />
-                  Est. Price
+                  Price Range
                 </label>
-                <p className="text-sm font-medium">${booking.service.price.toFixed(2)}</p>
+                <p className="text-sm font-medium">{booking.service.price}</p>
               </div>
-              {booking.total_price ? (
+              {booking.weight_kg ? (
                 <div>
                   <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                    <DollarSign className="h-3 w-3" />
-                    Final
+                    <Weight className="h-3 w-3" />
+                    Weight
                   </label>
-                  <p className="text-sm font-semibold text-green-600">${booking.total_price.toFixed(2)}</p>
+                  <p className="text-sm font-medium">{booking.weight_kg} kg</p>
                 </div>
               ) : (
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground">Final</label>
-                  <p className="text-xs text-muted-foreground">Not set</p>
+                  <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                    <Weight className="h-3 w-3" />
+                    Weight
+                  </label>
+                  <p className="text-xs text-muted-foreground">Not weighed</p>
                 </div>
               )}
             </div>
+            {booking.total_price && (
+              <div>
+                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                  <DollarSign className="h-3 w-3" />
+                  Final Price
+                </label>
+                <p className="text-sm font-semibold text-green-600">{formatPrice(booking.total_price)}</p>
+              </div>
+            )}
           </div>
 
           {/* Schedule Information */}
@@ -151,6 +164,14 @@ export function CustomerDetailsDialog({ open, onOpenChange, booking }: CustomerD
               </p>
             </div>
           </div>
+
+          {/* Additional Details */}
+          {booking.additional_details && (
+            <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3 space-y-2">
+              <h3 className="font-semibold text-sm">Additional Details</h3>
+              <p className="text-sm text-muted-foreground">{booking.additional_details}</p>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
