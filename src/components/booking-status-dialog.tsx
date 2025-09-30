@@ -116,6 +116,9 @@ export function BookingStatusDialog({ open, onOpenChange, booking, onSuccess }: 
         data.weight_kg
       )
       
+      // Dispatch event to notify dashboard of update
+      window.dispatchEvent(new Event('bookingUpdated'))
+      
       toast.success('Booking status updated successfully')
       onOpenChange(false)
       onSuccess()

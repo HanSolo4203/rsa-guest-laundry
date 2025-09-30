@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Calendar, Users, TrendingUp, Clock, CheckCircle, AlertCircle, CreditCard, Banknote, ArrowUp, ArrowDown } from 'lucide-react'
+import { Calendar, Users, TrendingUp, Clock, CheckCircle, AlertCircle, CreditCard, Banknote, ArrowUp, ArrowDown, RefreshCw } from 'lucide-react'
 import Link from 'next/link'
 import { CollectionNotificationBanner } from '@/components/collection-notification-banner'
 import { CustomerDetailsDialog } from '@/components/customer-details-dialog'
@@ -14,6 +14,7 @@ import { getBookings } from '@/lib/supabase/services'
 import { BookingWithService } from '@/lib/types/database'
 import { useSearch } from '@/contexts/search-context'
 import { DashboardSearch } from '@/components/dashboard-search'
+import { createClient } from '@/lib/supabase/client'
 
 
 const statusColors = {
@@ -68,6 +69,8 @@ export default function DashboardPage() {
   const [statusDialogOpen, setStatusDialogOpen] = useState(false)
   const [selectedBooking, setSelectedBooking] = useState<BookingWithService | null>(null)
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
+  const [hasNewData, setHasNewData] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const { searchQuery } = useSearch()
 
   const today = new Date().toISOString().split('T')[0]
@@ -132,21 +135,94 @@ export default function DashboardPage() {
     
     // Listen for new booking events from the main page
     const handleBookingAdded = () => {
-      // Preserve scroll position before refresh
-      const scrollPosition = window.pageYOffset || document.documentElement.scrollTop
-      
-      fetchBookings().then(() => {
-        // Restore scroll position after data is loaded
-        setTimeout(() => {
-          window.scrollTo(0, scrollPosition)
-        }, 100)
-      })
+      setHasNewData(true)
+    }
+    
+    // Listen for booking updates
+    const handleBookingUpdated = () => {
+      setHasNewData(true)
+    }
+    
+    // Listen for booking deletions
+    const handleBookingDeleted = () => {
+      setHasNewData(true)
     }
     
     window.addEventListener('bookingAdded', handleBookingAdded)
+    window.addEventListener('bookingUpdated', handleBookingUpdated)
+    window.addEventListener('bookingDeleted', handleBookingDeleted)
     
     return () => {
       window.removeEventListener('bookingAdded', handleBookingAdded)
+      window.removeEventListener('bookingUpdated', handleBookingUpdated)
+      window.removeEventListener('bookingDeleted', handleBookingDeleted)
+    }
+  }, [])
+
+  // Supabase Realtime subscription for database changes
+  useEffect(() => {
+    const supabase = createClient()
+    
+    // Subscribe to all changes on the bookings table
+    const channel = supabase
+      .channel('bookings-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'bookings'
+        },
+        async (payload) => {
+          console.log('Dashboard - Database change detected:', payload)
+          
+          // Handle different event types
+          if (payload.eventType === 'INSERT') {
+            // New booking added - fetch to get full booking with service details
+            await fetchBookings()
+            setHasNewData(true)
+          } else if (payload.eventType === 'UPDATE') {
+            // Booking updated - update the specific record in state immediately
+            const updatedBookingId = payload.new.id
+            
+            try {
+              const allBookings = await getBookings()
+              const updatedBooking = allBookings.find(b => b.id === updatedBookingId)
+              
+              if (updatedBooking) {
+                setBookings(prevBookings => {
+                  const bookingIndex = prevBookings.findIndex(b => b.id === updatedBookingId)
+                  
+                  if (bookingIndex !== -1) {
+                    // Update existing booking in place
+                    const newBookings = [...prevBookings]
+                    newBookings[bookingIndex] = updatedBooking
+                    return newBookings
+                  } else {
+                    // Booking not in current list, add it
+                    return [...prevBookings, updatedBooking]
+                  }
+                })
+                // Show success feedback
+                console.log('Dashboard updated in real-time ✅')
+              }
+            } catch (error) {
+              console.error('Error updating booking in dashboard:', error)
+              setHasNewData(true)
+            }
+          } else if (payload.eventType === 'DELETE') {
+            // Booking deleted - remove from state immediately
+            const deletedBookingId = payload.old.id
+            setBookings(prevBookings => prevBookings.filter(b => b.id !== deletedBookingId))
+            console.log('Booking removed from dashboard ✅')
+          }
+        }
+      )
+      .subscribe()
+
+    // Cleanup subscription on unmount
+    return () => {
+      supabase.removeChannel(channel)
     }
   }, [])
 
@@ -160,16 +236,25 @@ export default function DashboardPage() {
     setStatusDialogOpen(true)
   }
 
-  const handleStatusUpdateSuccess = () => {
+  const handleStatusUpdateSuccess = async () => {
+    // Immediately fetch updated data to show in dashboard
+    await fetchBookings()
+  }
+
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true)
+    setHasNewData(false)
+    
     // Preserve scroll position before refresh
     const scrollPosition = window.pageYOffset || document.documentElement.scrollTop
     
-    fetchBookings().then(() => {
-      // Restore scroll position after data is loaded
-      setTimeout(() => {
-        window.scrollTo(0, scrollPosition)
-      }, 100)
-    })
+    await fetchBookings()
+    
+    // Restore scroll position after data is loaded
+    setTimeout(() => {
+      window.scrollTo(0, scrollPosition)
+      setIsRefreshing(false)
+    }, 100)
   }
 
   const toggleSortOrder = () => {
@@ -187,9 +272,33 @@ export default function DashboardPage() {
             <span className="text-purple-400 text-sm font-medium tracking-wider uppercase">Admin Portal</span>
             <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse ml-3"></div>
           </div>
-          <h1 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-purple-200 to-white mb-4 tracking-tight">
-            Dashboard
-          </h1>
+          <div className="flex items-center justify-center gap-4 mb-4">
+            <h1 className="text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-purple-200 to-white tracking-tight">
+              Dashboard
+            </h1>
+            {/* Refresh Button */}
+            <Button
+              onClick={handleManualRefresh}
+              disabled={isRefreshing}
+              className={`
+                relative group
+                bg-gradient-to-r from-purple-600 to-blue-600 
+                hover:from-purple-700 hover:to-blue-700 
+                text-white font-semibold px-4 py-2 rounded-lg 
+                shadow-lg hover:shadow-xl transition-all duration-200
+                ${hasNewData ? 'animate-pulse ring-4 ring-yellow-400/50' : ''}
+              `}
+              title={hasNewData ? 'New data available - Click to refresh' : 'Refresh dashboard data'}
+            >
+              <RefreshCw className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {hasNewData && (
+                <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-yellow-500"></span>
+                </span>
+              )}
+            </Button>
+          </div>
           <div className="flex items-center justify-center gap-2 mb-4">
             <div className="h-px bg-gradient-to-r from-transparent via-purple-500/50 to-transparent flex-1 max-w-32"></div>
             <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
@@ -210,6 +319,15 @@ export default function DashboardPage() {
               <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
               <span>Real-time Updates</span>
             </div>
+            {hasNewData && (
+              <>
+                <div className="w-px h-4 bg-gray-600"></div>
+                <div className="flex items-center gap-2 text-sm text-yellow-400 font-semibold">
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+                  <span>New Data Available</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

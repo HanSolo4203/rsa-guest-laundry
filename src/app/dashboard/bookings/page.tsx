@@ -13,6 +13,7 @@ import { BookingStatusDialog } from '@/components/booking-status-dialog'
 import { CustomerDetailsDialog } from '@/components/customer-details-dialog'
 import { formatPrice } from '@/lib/pricing'
 import { useSearch } from '@/contexts/search-context'
+import { createClient } from '@/lib/supabase/client'
 
 
 const statusColors = {
@@ -79,6 +80,67 @@ export default function BookingsPage() {
 
   useEffect(() => {
     fetchBookings()
+  }, [])
+
+  // Supabase Realtime subscription for database changes
+  useEffect(() => {
+    const supabase = createClient()
+    
+    // Subscribe to all changes on the bookings table
+    const channel = supabase
+      .channel('bookings-page-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'bookings'
+        },
+        async (payload) => {
+          console.log('Bookings page - Database change detected:', payload)
+          
+          // Handle different event types
+          if (payload.eventType === 'INSERT') {
+            // New booking added
+            await fetchBookings()
+          } else if (payload.eventType === 'UPDATE') {
+            // Booking updated - update the specific record immediately
+            const updatedBookingId = payload.new.id
+            
+            try {
+              const allBookings = await getBookings()
+              const updatedBooking = allBookings.find(b => b.id === updatedBookingId)
+              
+              if (updatedBooking) {
+                setBookings(prevBookings => {
+                  const bookingIndex = prevBookings.findIndex(b => b.id === updatedBookingId)
+                  
+                  if (bookingIndex !== -1) {
+                    const newBookings = [...prevBookings]
+                    newBookings[bookingIndex] = updatedBooking
+                    return newBookings
+                  } else {
+                    return [...prevBookings, updatedBooking]
+                  }
+                })
+                console.log('Bookings page updated in real-time ✅')
+              }
+            } catch (error) {
+              console.error('Error updating booking:', error)
+            }
+          } else if (payload.eventType === 'DELETE') {
+            // Booking deleted
+            const deletedBookingId = payload.old.id
+            setBookings(prevBookings => prevBookings.filter(b => b.id !== deletedBookingId))
+            console.log('Booking removed ✅')
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [])
 
   const handleStatusUpdate = (booking: BookingWithService) => {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { format } from 'date-fns'
@@ -14,6 +14,7 @@ import {
 import { Service, BookingWithService } from '@/lib/types/database'
 import { calculatePrice } from '@/lib/pricing'
 import { getTheme, type HomeTheme } from '@/config/homeThemes'
+import { createClient } from '@/lib/supabase/client'
 
 export type HomeVariant = 'default' | 'modern' | 'minimal'
 
@@ -285,60 +286,73 @@ export function useHomePage(): UseHomePageReturn {
     setSelectedMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))
   }, [])
   
-  // Filter bookings based on month and search query
-  const filteredBookings = bookings.filter(booking => {
-    // Filter by month
-    const bookingDate = new Date(booking.collection_date)
-    const bookingMonth = bookingDate.getMonth()
-    const bookingYear = bookingDate.getFullYear()
-    const selectedMonthNum = selectedMonth.getMonth()
-    const selectedYear = selectedMonth.getFullYear()
-    
-    const monthMatch = bookingMonth === selectedMonthNum && bookingYear === selectedYear
-    
-    // Filter by search query
-    const searchMatch = !searchQuery.trim() || 
-      `${booking.first_name} ${booking.last_name}`.toLowerCase().includes(searchQuery.toLowerCase().trim())
-    
-    return monthMatch && searchMatch
-  })
-  
-  // Group filtered bookings by collection date
-  const groupedBookings = filteredBookings.reduce((groups, booking) => {
-    const collectionDate = format(new Date(booking.collection_date), 'yyyy-MM-dd')
-    if (!groups[collectionDate]) {
-      groups[collectionDate] = []
-    }
-    groups[collectionDate].push(booking)
-    return groups
-  }, {} as Record<string, BookingWithService[]>)
-  
-  // Sort dates in descending order (latest first) and bookings within each group
-  const sortedDates = Object.keys(groupedBookings).sort((a, b) => b.localeCompare(a))
-  sortedDates.forEach(date => {
-    groupedBookings[date].sort((a, b) => {
-      // Define status priority order: completed without payment, completed with payment, processing, pending, cancelled
-      const getStatusPriority = (booking: BookingWithService) => {
-        if (booking.status === 'completed' && !booking.payment_method) return 1 // Highest priority
-        if (booking.status === 'completed' && booking.payment_method) return 2
-        if (booking.status === 'processing') return 3
-        if (booking.status === 'pending') return 4
-        if (booking.status === 'cancelled') return 5 // Lowest priority
-        return 6 // Other statuses
-      }
+  // Filter bookings based on month and search query - MEMOIZED for performance
+  const filteredBookings = useMemo(() => {
+    return bookings.filter(booking => {
+      // Filter by month
+      const bookingDate = new Date(booking.collection_date)
+      const bookingMonth = bookingDate.getMonth()
+      const bookingYear = bookingDate.getFullYear()
+      const selectedMonthNum = selectedMonth.getMonth()
+      const selectedYear = selectedMonth.getFullYear()
       
-      const aPriority = getStatusPriority(a)
-      const bPriority = getStatusPriority(b)
+      const monthMatch = bookingMonth === selectedMonthNum && bookingYear === selectedYear
       
-      // If different priorities, sort by priority
-      if (aPriority !== bPriority) {
-        return aPriority - bPriority
-      }
+      // Filter by search query
+      const searchMatch = !searchQuery.trim() || 
+        `${booking.first_name} ${booking.last_name}`.toLowerCase().includes(searchQuery.toLowerCase().trim())
       
-      // If same priority, sort by collection date (latest first)
-      return new Date(b.collection_date).getTime() - new Date(a.collection_date).getTime()
+      return monthMatch && searchMatch
     })
-  })
+  }, [bookings, selectedMonth, searchQuery])
+  
+  // Group filtered bookings by collection date - MEMOIZED for performance
+  const groupedBookings = useMemo(() => {
+    const groups = filteredBookings.reduce((groups, booking) => {
+      const collectionDate = format(new Date(booking.collection_date), 'yyyy-MM-dd')
+      if (!groups[collectionDate]) {
+        groups[collectionDate] = []
+      }
+      groups[collectionDate].push(booking)
+      return groups
+    }, {} as Record<string, BookingWithService[]>)
+    
+    console.log('🔄 Recalculating groupedBookings, total groups:', Object.keys(groups).length)
+    return groups
+  }, [filteredBookings])
+  
+  // Sort dates in descending order (latest first) and bookings within each group - MEMOIZED
+  const sortedDates = useMemo(() => {
+    const dates = Object.keys(groupedBookings).sort((a, b) => b.localeCompare(a))
+    
+    dates.forEach(date => {
+      groupedBookings[date].sort((a, b) => {
+        // Define status priority order: completed without payment, completed with payment, processing, pending, cancelled
+        const getStatusPriority = (booking: BookingWithService) => {
+          if (booking.status === 'completed' && !booking.payment_method) return 1 // Highest priority
+          if (booking.status === 'completed' && booking.payment_method) return 2
+          if (booking.status === 'processing') return 3
+          if (booking.status === 'pending') return 4
+          if (booking.status === 'cancelled') return 5 // Lowest priority
+          return 6 // Other statuses
+        }
+        
+        const aPriority = getStatusPriority(a)
+        const bPriority = getStatusPriority(b)
+        
+        // If different priorities, sort by priority
+        if (aPriority !== bPriority) {
+          return aPriority - bPriority
+        }
+        
+        // If same priority, sort by collection date (latest first)
+        return new Date(b.collection_date).getTime() - new Date(a.collection_date).getTime()
+      })
+    })
+    
+    console.log('🔄 Recalculating sortedDates, total dates:', dates.length)
+    return dates
+  }, [groupedBookings])
   
   // Initialize data on mount
   useEffect(() => {
@@ -356,6 +370,85 @@ export function useHomePage(): UseHomePageReturn {
       window.removeEventListener('bookingAdded', handleBookingAdded)
     }
   }, [fetchServices, fetchBookings])
+
+  // Supabase Realtime subscription for database changes
+  useEffect(() => {
+    const supabase = createClient()
+    
+    // Subscribe to all changes on the bookings table
+    const channel = supabase
+      .channel('home-bookings-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'bookings'
+        },
+        async (payload) => {
+          console.log('Home sidebar - Database change detected:', payload)
+          
+          // Handle different event types
+          if (payload.eventType === 'INSERT') {
+            // New booking added - fetch to get full booking with service details
+            await fetchBookings()
+          } else if (payload.eventType === 'UPDATE') {
+            // Booking updated - update the specific record in state without full refetch
+            // This preserves user input in forms
+            const updatedBookingId = payload.new.id
+            
+            console.log('🔄 Updating booking:', updatedBookingId)
+            console.log('📝 New data:', payload.new)
+            
+            // Fetch only the updated booking to get full details with service
+            try {
+              const allBookings = await getBookings()
+              const updatedBooking = allBookings.find(b => b.id === updatedBookingId)
+              
+              if (updatedBooking) {
+                console.log('✅ Found updated booking:', updatedBooking)
+                console.log('📊 Updated status:', updatedBooking.status)
+                
+                setBookings(prevBookings => {
+                  const bookingIndex = prevBookings.findIndex(b => b.id === updatedBookingId)
+                  
+                  console.log('🔍 Booking index in current state:', bookingIndex)
+                  console.log('📋 Current bookings count:', prevBookings.length)
+                  
+                  if (bookingIndex !== -1) {
+                    // Update existing booking - create completely new array
+                    const newBookings = prevBookings.map((booking, index) => 
+                      index === bookingIndex ? { ...updatedBooking } : booking
+                    )
+                    console.log('✨ Updated bookings array, new status at index', bookingIndex, ':', newBookings[bookingIndex].status)
+                    return newBookings
+                  } else {
+                    // Booking not in current list, add it
+                    console.log('➕ Adding new booking to list')
+                    return [...prevBookings, updatedBooking]
+                  }
+                })
+                console.log('✅ State update triggered!')
+              } else {
+                console.warn('⚠️ Updated booking not found in fetched data')
+              }
+            } catch (error) {
+              console.error('❌ Error updating booking in state:', error)
+            }
+          } else if (payload.eventType === 'DELETE') {
+            // Booking deleted - remove from state
+            const deletedBookingId = payload.old.id
+            setBookings(prevBookings => prevBookings.filter(b => b.id !== deletedBookingId))
+          }
+        }
+      )
+      .subscribe()
+
+    // Cleanup subscription on unmount
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [fetchBookings])
 
   // Auto-expand current day when month changes
   useEffect(() => {

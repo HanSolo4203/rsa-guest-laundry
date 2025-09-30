@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -78,6 +79,15 @@ export function BookingsSidebar({ visible = false, onToggle, variant = 'default'
     groupedBookings,
     sortedDates,
   } = useHomePage()
+
+  // Debug: Log when component receives updated data
+  useEffect(() => {
+    console.log('🎨 BookingsSidebar re-rendering!')
+    console.log('📊 Total bookings:', bookings.length)
+    console.log('📊 Filtered bookings:', filteredBookings.length)
+    console.log('📊 Grouped bookings dates:', Object.keys(groupedBookings).length)
+    console.log('📋 Bookings statuses:', bookings.map(b => ({ id: b.id.substring(0, 8), status: b.status })))
+  }, [bookings, filteredBookings, groupedBookings])
 
   // Variant-specific styling for sidebar
   const getSidebarVariantStyles = () => {
