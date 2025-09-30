@@ -32,6 +32,7 @@ import {
   ChevronUp
 } from 'lucide-react'
 import { useHomePage } from '@/hooks/useHomePage'
+import { createClient } from '@/lib/supabase/client'
 
 type BookingsSidebarVariant = 'default' | 'modern' | 'minimal'
 
@@ -88,6 +89,39 @@ export function BookingsSidebar({ visible = false, onToggle, variant = 'default'
     console.log('📊 Grouped bookings dates:', Object.keys(groupedBookings).length)
     console.log('📋 Bookings statuses:', bookings.map(b => ({ id: b.id.substring(0, 8), status: b.status })))
   }, [bookings, filteredBookings, groupedBookings])
+
+  // Supabase Realtime subscription for database changes
+  useEffect(() => {
+    const supabase = createClient()
+    
+    // Subscribe to all changes on the bookings table
+    const channel = supabase
+      .channel('sidebar-bookings-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'bookings'
+        },
+        async (payload) => {
+          console.log('🔔 Sidebar - Database change detected:', payload.eventType)
+          console.log('📝 Change details:', payload)
+          
+          // For any database change, trigger a full refresh
+          // This ensures cards are properly sorted by date and status
+          console.log('🔄 Triggering automatic sidebar refresh...')
+          await fetchBookings()
+          console.log('✅ Sidebar refreshed successfully!')
+        }
+      )
+      .subscribe()
+
+    // Cleanup subscription on unmount
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [fetchBookings])
 
   // Variant-specific styling for sidebar
   const getSidebarVariantStyles = () => {
