@@ -250,3 +250,4 @@ Check these files for reference:
 - `supabase/migrations/015_fix_realtime_replication.sql` - The fix migration
 
 Or check Supabase Realtime docs: https://supabase.com/docs/guides/realtime
+

@@ -14,7 +14,6 @@ import {
 import { Service, BookingWithService } from '@/lib/types/database'
 import { calculatePrice } from '@/lib/pricing'
 import { getTheme, type HomeTheme } from '@/config/homeThemes'
-import { createClient } from '@/lib/supabase/client'
 
 export type HomeVariant = 'default' | 'modern' | 'minimal'
 
