@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Calendar, Users, TrendingUp, Clock, CheckCircle, AlertCircle, CreditCard, Banknote, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { Calendar, Users, TrendingUp, Clock, CheckCircle, AlertCircle, CreditCard, Banknote, ArrowUp, ArrowDown } from 'lucide-react'
 import Link from 'next/link'
 import { CollectionNotificationBanner } from '@/components/collection-notification-banner'
 import { CustomerDetailsDialog } from '@/components/customer-details-dialog'

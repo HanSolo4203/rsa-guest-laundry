@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button'
 import { Menu, X } from 'lucide-react'
 import { useHomePage, type HomeVariant } from '@/hooks/useHomePage'
 import { DevTools } from '@/components/DevTools'
-import { tradeHotelBrand } from '@/config/clientBrand'
 
 export default function ClientPreviewPage() {
   const {
@@ -47,8 +46,8 @@ export default function ClientPreviewPage() {
         <select
           value={variant}
           onChange={(e) => setVariant(e.target.value as HomeVariant)}
-          className="bg-white/90 backdrop-blur-sm border text-charcoal rounded-2xl px-4 py-2 text-sm focus:outline-none focus:ring-2 shadow-md"
-          style={{borderColor: 'rgba(43, 95, 68, 0.2)', focusRingColor: 'rgba(43, 95, 68, 0.5)'}}
+          className="bg-white/90 backdrop-blur-sm border text-charcoal rounded-2xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[rgba(43,95,68,0.5)] shadow-md"
+          style={{borderColor: 'rgba(43, 95, 68, 0.2)'}}
         >
           <option value="default">Default</option>
           <option value="modern">Modern</option>

@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import {
   Calendar,
   Settings,
@@ -14,15 +13,12 @@ import {
   Home,
   Package,
   LogOut,
-  Search,
-  Bell,
   BarChart3,
   MessageSquare
 } from 'lucide-react'
 import { ProtectedRoute } from '@/components/protected-route'
 import { useAuth } from '@/contexts/auth-context'
 import { SearchProvider } from '@/contexts/search-context'
-import { DashboardSearch } from '@/components/dashboard-search'
 import { toast } from 'sonner'
 
 const navigation = [
@@ -72,7 +68,7 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
-  const { user, signOut } = useAuth()
+  const { signOut } = useAuth()
 
   const handleSignOut = async () => {
     try {

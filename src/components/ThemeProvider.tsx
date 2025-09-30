@@ -41,7 +41,8 @@ export function ThemeProvider({ theme, children, className = '' }: ThemeProvider
 }
 
 // Hook to get current theme styles
-export function useThemeStyles(theme: HomeTheme) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function useThemeStyles(_theme: HomeTheme) {
   return {
     // Color utilities
     colors: {

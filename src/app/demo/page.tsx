@@ -11,7 +11,6 @@ import { Badge } from '@/components/ui/badge'
 import { Menu, X, Star, CheckCircle, ArrowRight, Quote, Sparkles, MapPin } from 'lucide-react'
 import { useHomePage, type HomeVariant } from '@/hooks/useHomePage'
 import { DevTools } from '@/components/DevTools'
-import { ThemeProvider } from '@/components/ThemeProvider'
 import { tradeHotelBrand } from '@/config/clientBrand'
 
 export default function DemoPage() {
@@ -22,7 +21,6 @@ export default function DemoPage() {
     setSidebarVisible,
     variant,
     setVariant,
-    theme,
   } = useHomePage()
 
   return (
@@ -102,12 +100,12 @@ export default function DemoPage() {
                 Our Laundry Services
               </h2>
               <p className="text-xl text-text-light max-w-2xl mx-auto leading-relaxed">
-                Who doesn't love a deal? Professional care for all your laundry needs with our quirky luxury approach
+                Who doesn&apos;t love a deal? Professional care for all your laundry needs with our quirky luxury approach
               </p>
             </div>
             
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {services.map((service, index) => (
+              {services.map((service) => (
                 <Card 
                   key={service.id} 
                   className="group hover:shadow-xl transition-all duration-500 hover:-translate-y-2 border-0 shadow-md rounded-3xl overflow-hidden bg-white"
@@ -229,7 +227,7 @@ export default function DemoPage() {
                 Simple Pricing
               </h2>
               <p className="text-xl text-text-light max-w-2xl mx-auto leading-relaxed">
-                Transparent pricing with no hidden fees - who doesn't love a deal?
+                Transparent pricing with no hidden fees - who doesn&apos;t love a deal?
               </p>
             </div>
             
@@ -310,8 +308,8 @@ export default function DemoPage() {
                     </div>
                     <Quote className="h-8 w-8 text-coral-pink/30 mb-4" />
                     <p className="text-text-light mb-6 leading-relaxed italic">
-                      "Exceptional service! My clothes have never looked better. The quirky luxury approach 
-                      makes me feel good about using their service."
+                      &quot;Exceptional service! My clothes have never looked better. The quirky luxury approach 
+                      makes me feel good about using their service.&quot;
                     </p>
                     <div className="flex items-center">
                       <div className="w-12 h-12 bg-primary-green/10 rounded-full flex items-center justify-center mr-4">

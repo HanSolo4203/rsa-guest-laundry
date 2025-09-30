@@ -4,9 +4,7 @@ import { ArrowRight as ArrowRightIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Service } from '@/lib/types/database'
-import { formatPrice } from '@/lib/pricing'
 import { useHomePage } from '@/hooks/useHomePage'
-import { useThemeStyles } from '@/components/ThemeProvider'
 
 type BookingFormVariant = 'default' | 'modern' | 'minimal'
 
@@ -90,14 +88,9 @@ export function BookingForm({ services, variant = 'default' }: BookingFormProps)
     isSubmittingBooking,
     weight,
     setWeight,
-    selectedService,
     setSelectedService,
-    calculatedPrice,
     onSubmitBooking,
-    theme,
   } = useHomePage()
-  
-  const themeStyles = useThemeStyles(theme)
 
   // Variant-specific styling for form
   const getFormVariantStyles = () => {

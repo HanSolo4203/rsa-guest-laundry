@@ -112,7 +112,7 @@ export default function HomeDemo() {
                     Book Your Laundry Service
                   </h2>
                   <p className="text-text-light">
-                    Who doesn't love a deal? Get your laundry done while you explore Cape Town!
+                    Who doesn&apos;t love a deal? Get your laundry done while you explore Cape Town!
                   </p>
                   <div className="mt-4">
                     <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-coral-pink/10 text-coral-pink border border-coral-pink/20">
