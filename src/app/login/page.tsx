@@ -58,7 +58,7 @@ export default function LoginPage() {
           {/* Logo/Branding */}
           <div className="mb-8 flex justify-center">
             <Image 
-              src="/express laundry.png" 
+              src="/logo2.png" 
               alt="Express Laundry" 
               width={300}
               height={99}

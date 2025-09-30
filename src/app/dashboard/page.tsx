@@ -321,7 +321,7 @@ export default function DashboardPage() {
 
       {/* Stats cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-gray-800 border-gray-700 transition-transform duration-200 ease-out hover:scale-105 hover:shadow-lg">
           <CardHeader className="text-center space-y-2 pb-2">
             <div className="flex justify-center">
               <Calendar className="h-6 w-6 text-gray-400" />
@@ -336,7 +336,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-orange-500 bg-orange-900/20">
+        <Card className="border-orange-500 bg-orange-900/20 transition-transform duration-200 ease-out hover:scale-105 hover:shadow-lg">
           <CardHeader className="text-center space-y-2 pb-2">
             <div className="flex justify-center">
               <AlertCircle className="h-6 w-6 text-orange-400" />
@@ -351,7 +351,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-gray-800 border-gray-700 transition-transform duration-200 ease-out hover:scale-105 hover:shadow-lg">
           <CardHeader className="text-center space-y-2 pb-2">
             <div className="flex justify-center">
               <Users className="h-6 w-6 text-gray-400" />
@@ -366,7 +366,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-gray-800 border-gray-700 transition-transform duration-200 ease-out hover:scale-105 hover:shadow-lg">
           <CardHeader className="text-center space-y-2 pb-2">
             <div className="flex justify-center">
               <TrendingUp className="h-6 w-6 text-gray-400" />
@@ -388,7 +388,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Today&apos;s Collections - Prominent Display */}
-      <Card className="bg-gray-800 border-gray-700">
+      <Card className="bg-gray-800 border-gray-700 transition-transform duration-200 ease-out hover:scale-[1.02] hover:shadow-lg">
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
@@ -552,7 +552,7 @@ export default function DashboardPage() {
         </Card>
 
       {/* All Bookings Table */}
-      <Card className="bg-gray-800 border-gray-700">
+      <Card className="bg-gray-800 border-gray-700 transition-transform duration-200 ease-out hover:scale-[1.02] hover:shadow-lg">
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>

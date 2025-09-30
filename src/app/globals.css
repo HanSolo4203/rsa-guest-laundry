@@ -13,7 +13,21 @@
 }
 /* Arrow-shaped button utility */
 .btn-arrow-right {
-  clip-path: polygon(0 0, calc(100% - 28px) 0, 100% 50%, calc(100% - 28px) 100%, 0 100%);
+  clip-path: polygon(12px 0, calc(100% - 28px) 0, 100% 50%, calc(100% - 28px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px);
+  position: relative;
+}
+
+.btn-arrow-right::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  clip-path: polygon(12px 0, calc(100% - 28px) 0, 100% 50%, calc(100% - 28px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px, 12px 0, 14px 2px, 2px 12px, 2px calc(100% - 12px), 14px calc(100% - 2px), calc(100% - 30px) calc(100% - 2px), calc(100% - 4px) 50%, calc(100% - 30px) 2px, 14px 2px);
+  background: currentColor;
+  pointer-events: none;
+  z-index: 1;
 }
 
 .btn-arrow-right:hover {

@@ -1,0 +1,663 @@
+/* Home Demo Variant Styles */
+/* The Trade Hotel - Colorful boutique luxury with quirky personality */
+
+.home-demo-variant {
+  /* Clean white background with warm off-white sections */
+  background: linear-gradient(135deg, 
+    #FFFFFF 0%, 
+    #F8F6F3 25%, 
+    #FFFFFF 50%, 
+    #F8F6F3 75%, 
+    #FFFFFF 100%
+  ) !important;
+  position: relative;
+  font-family: 'Inter', 'Helvetica Neue', sans-serif;
+}
+
+/* The Trade Hotel brand color variables */
+.home-demo-variant {
+  --primary-green: #2B5F44;        /* Deep green - main CTAs, nav */
+  --gold-accent: #D4AF37;          /* Gold/brass accent */
+  --coral-pink: #E85D75;           /* Coral pink - secondary CTAs */
+  --teal-blue: #4A90A4;            /* Teal blue - supporting */
+  --sage-green: #84A98C;           /* Sage green - supporting */
+  --soft-pink: #F4C2C2;            /* Soft pink - supporting */
+  --background: #FFFFFF;           /* White */
+  --background-alt: #F8F6F3;       /* Warm off-white */
+  --text-charcoal: #2F2F2F;        /* Charcoal text */
+  --text-light: #6B6B6B;           /* Gray text */
+  
+  /* Newsletter form colors from image */
+  --warm-peach-pink: #F8F6F3;      /* Light peach-pink background */
+  --dark-red-brown: #6B2F2F;       /* Deep red-brown for form fields */
+  --dark-red-brown-light: #8B4A4A; /* Lighter red-brown for hover */
+  
+  /* Hover states */
+  --primary-green-hover: #1e4a32;
+  --gold-accent-hover: #b8941f;
+  --coral-pink-hover: #d44a63;
+}
+
+/* Subtle background elements with Trade Hotel brand colors */
+.home-demo-variant .absolute.inset-0 .absolute {
+  animation-duration: 15s !important;
+  opacity: 0.2 !important;
+}
+
+.home-demo-variant .absolute.top-1\/4.left-1\/4 {
+  background: radial-gradient(circle, rgba(43, 95, 68, 0.06) 0%, rgba(43, 95, 68, 0.02) 70%, transparent 100%) !important;
+  animation: trade-float-1 20s ease-in-out infinite;
+}
+
+.home-demo-variant .absolute.bottom-1\/3.right-1\/4 {
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.05) 0%, rgba(212, 175, 55, 0.02) 70%, transparent 100%) !important;
+  animation: trade-float-2 22s ease-in-out infinite;
+}
+
+.home-demo-variant .absolute.top-1\/2.right-1\/3 {
+  background: radial-gradient(circle, rgba(232, 93, 117, 0.04) 0%, rgba(232, 93, 117, 0.01) 70%, transparent 100%) !important;
+  animation: trade-float-3 24s ease-in-out infinite;
+}
+
+.home-demo-variant .absolute.top-1\/6.right-1\/6 {
+  background: radial-gradient(circle, rgba(74, 144, 164, 0.03) 0%, rgba(74, 144, 164, 0.01) 70%, transparent 100%) !important;
+  animation: trade-float-4 26s ease-in-out infinite;
+}
+
+.home-demo-variant .absolute.bottom-1\/4.left-1\/6 {
+  background: radial-gradient(circle, rgba(132, 169, 140, 0.03) 0%, rgba(132, 169, 140, 0.01) 70%, transparent 100%) !important;
+  animation: trade-float-5 28s ease-in-out infinite;
+}
+
+/* Trade Hotel brand animations - gentle and sophisticated */
+@keyframes trade-float-1 {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px) scale(1) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-8px) translateX(6px) scale(1.02) rotate(1deg);
+  }
+  50% {
+    transform: translateY(-4px) translateX(-6px) scale(0.98) rotate(-0.5deg);
+  }
+  75% {
+    transform: translateY(-12px) translateX(3px) scale(1.01) rotate(0.5deg);
+  }
+}
+
+@keyframes trade-float-2 {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px) scale(1) rotate(0deg);
+  }
+  30% {
+    transform: translateY(6px) translateX(-8px) scale(0.99) rotate(-1deg);
+  }
+  60% {
+    transform: translateY(10px) translateX(5px) scale(1.02) rotate(0.5deg);
+  }
+  90% {
+    transform: translateY(4px) translateX(-3px) scale(0.98) rotate(-0.5deg);
+  }
+}
+
+@keyframes trade-float-3 {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px) scale(1) rotate(0deg);
+  }
+  40% {
+    transform: translateY(-6px) translateX(4px) scale(1.01) rotate(0.5deg);
+  }
+  80% {
+    transform: translateY(-3px) translateX(-4px) scale(0.99) rotate(-0.5deg);
+  }
+}
+
+@keyframes trade-float-4 {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px) scale(1) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-12px) translateX(10px) scale(1.03) rotate(1.5deg);
+  }
+}
+
+@keyframes trade-float-5 {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px) scale(1) rotate(0deg);
+  }
+  50% {
+    transform: translateY(10px) translateX(-8px) scale(1.02) rotate(-1deg);
+  }
+}
+
+/* Trade Hotel lens flare effects - using brand colors */
+.home-demo-variant .lens-flare-1 {
+  background: radial-gradient(circle, rgba(232, 93, 117, 0.6) 0%, rgba(232, 93, 117, 0.3) 30%, transparent 70%);
+  animation: trade-lens-flare-1 8s ease-in-out infinite;
+}
+
+.home-demo-variant .lens-flare-2 {
+  background: radial-gradient(circle, rgba(43, 95, 68, 0.5) 0%, rgba(43, 95, 68, 0.25) 40%, transparent 80%);
+  animation: trade-lens-flare-2 10s ease-in-out infinite;
+}
+
+.home-demo-variant .lens-flare-3 {
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.6) 0%, rgba(212, 175, 55, 0.3) 35%, transparent 75%);
+  animation: trade-lens-flare-3 9s ease-in-out infinite;
+}
+
+@keyframes trade-lens-flare-1 {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  25% {
+    opacity: 0.7;
+    transform: scale(1.2);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.4);
+  }
+  75% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+}
+
+@keyframes trade-lens-flare-2 {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0.1);
+  }
+  30% {
+    opacity: 0.6;
+    transform: scale(1.1);
+  }
+  60% {
+    opacity: 0.8;
+    transform: scale(1.3);
+  }
+  90% {
+    opacity: 0.3;
+    transform: scale(0.9);
+  }
+}
+
+@keyframes trade-lens-flare-3 {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  35% {
+    opacity: 0.6;
+    transform: scale(1.1);
+  }
+  70% {
+    opacity: 0.8;
+    transform: scale(1.2);
+  }
+  95% {
+    opacity: 0.2;
+    transform: scale(0.8);
+  }
+}
+
+/* Trade Hotel variant selector styling */
+.home-demo-variant .fixed.top-4.left-4 select {
+  background: linear-gradient(135deg, var(--primary-green) 0%, var(--teal-blue) 100%) !important;
+  border: 2px solid rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(20px) !important;
+  box-shadow: 0 8px 32px rgba(43, 95, 68, 0.3) !important;
+  transition: all 0.3s ease !important;
+  color: white !important;
+  border-radius: 12px !important;
+}
+
+.home-demo-variant .fixed.top-4.left-4 select:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 12px 40px rgba(43, 95, 68, 0.4) !important;
+  background: linear-gradient(135deg, var(--primary-green-hover) 0%, var(--teal-blue) 100%) !important;
+}
+
+.home-demo-variant .fixed.top-4.left-4 select:focus {
+  box-shadow: 0 0 0 4px rgba(43, 95, 68, 0.3) !important;
+}
+
+/* Trade Hotel sidebar toggle button */
+.home-demo-variant .fixed.top-4.z-50 button {
+  background: linear-gradient(135deg, var(--coral-pink) 0%, var(--gold-accent) 100%) !important;
+  border: 2px solid rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(20px) !important;
+  box-shadow: 0 8px 32px rgba(232, 93, 117, 0.3) !important;
+  transition: all 0.3s ease !important;
+  border-radius: 12px !important;
+}
+
+.home-demo-variant .fixed.top-4.z-50 button:hover {
+  transform: translateY(-2px) scale(1.05) !important;
+  box-shadow: 0 12px 40px rgba(232, 93, 117, 0.4) !important;
+  background: linear-gradient(135deg, var(--coral-pink-hover) 0%, var(--gold-accent-hover) 100%) !important;
+}
+
+/* Trade Hotel Typography */
+.home-demo-variant {
+  font-family: 'Inter', 'Helvetica Neue', sans-serif;
+  color: var(--text-charcoal);
+}
+
+.home-demo-variant h1,
+.home-demo-variant h2,
+.home-demo-variant h3,
+.home-demo-variant h4,
+.home-demo-variant h5,
+.home-demo-variant h6 {
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--text-charcoal);
+  line-height: 1.2;
+}
+
+.home-demo-variant p {
+  color: var(--text-light);
+  line-height: 1.7;
+  font-weight: 400;
+}
+
+/* Enhanced spacing for demo variant */
+.home-demo-variant .max-w-4xl {
+  max-width: 56rem !important; /* Slightly wider for demo */
+}
+
+.home-demo-variant .mb-6 {
+  margin-bottom: 2.5rem !important; /* Increased spacing */
+}
+
+.home-demo-variant .mb-8 {
+  margin-bottom: 3.5rem !important; /* Increased spacing */
+}
+
+.home-demo-variant .mb-10 {
+  margin-bottom: 4.5rem !important; /* Increased spacing */
+}
+
+/* Responsive enhancements */
+@media (min-width: 640px) {
+  .home-demo-variant .sm\:mb-8 {
+    margin-bottom: 3.5rem !important;
+  }
+  
+  .home-demo-variant .sm\:mb-10 {
+    margin-bottom: 4.5rem !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .home-demo-variant .md\:mb-10 {
+    margin-bottom: 4.5rem !important;
+  }
+  
+  /* Enhanced background positioning for larger screens */
+  .home-demo-variant .absolute.top-1\/4.left-1\/4 {
+    width: 28rem !important; /* 448px */
+    height: 28rem !important;
+  }
+  
+  .home-demo-variant .absolute.bottom-1\/3.right-1\/4 {
+    width: 24rem !important; /* 384px */
+    height: 24rem !important;
+  }
+  
+  .home-demo-variant .absolute.top-1\/2.right-1\/3 {
+    width: 20rem !important; /* 320px */
+    height: 20rem !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .home-demo-variant .lg\:mb-10 {
+    margin-bottom: 4.5rem !important;
+  }
+  
+  /* Even more enhanced background elements for large screens */
+  .home-demo-variant .absolute.top-1\/6.right-1\/6 {
+    width: 18rem !important; /* 288px */
+    height: 18rem !important;
+  }
+  
+  .home-demo-variant .absolute.bottom-1\/4.left-1\/6 {
+    width: 24rem !important; /* 384px */
+    height: 24rem !important;
+  }
+}
+
+/* Enhanced mobile overlay */
+.home-demo-variant .fixed.inset-0.bg-black\/50 {
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.6) 0%, rgba(59, 130, 246, 0.1) 100%) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+/* Custom scrollbar for demo variant */
+.home-demo-variant .sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(236, 72, 153, 0.3) transparent;
+}
+
+.home-demo-variant .sidebar-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.home-demo-variant .sidebar-scroll::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.home-demo-variant .sidebar-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, rgba(236, 72, 153, 0.6) 0%, rgba(168, 85, 247, 0.6) 100%);
+  border-radius: 3px;
+  transition: all 0.3s ease;
+}
+
+.home-demo-variant .sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, rgba(236, 72, 153, 0.8) 0%, rgba(168, 85, 247, 0.8) 100%);
+}
+
+/* Enhanced focus states for accessibility */
+.home-demo-variant *:focus {
+  outline: 2px solid rgba(59, 130, 246, 0.6) !important;
+  outline-offset: 2px !important;
+}
+
+.home-demo-variant button:focus,
+.home-demo-variant select:focus,
+.home-demo-variant input:focus,
+.home-demo-variant textarea:focus {
+  outline: 2px solid rgba(236, 72, 153, 0.6) !important;
+  outline-offset: 2px !important;
+}
+
+/* Smooth transitions for all interactive elements */
+.home-demo-variant button,
+.home-demo-variant select,
+.home-demo-variant input,
+.home-demo-variant textarea,
+.home-demo-variant .transition-all {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Trade Hotel brand utility classes */
+.home-demo-variant .text-primary-green {
+  color: var(--primary-green) !important;
+}
+
+.home-demo-variant .text-gold-accent {
+  color: var(--gold-accent) !important;
+}
+
+.home-demo-variant .text-coral-pink {
+  color: var(--coral-pink) !important;
+}
+
+.home-demo-variant .text-charcoal {
+  color: var(--text-charcoal) !important;
+}
+
+.home-demo-variant .text-text-light {
+  color: var(--text-light) !important;
+}
+
+.home-demo-variant .bg-primary-green {
+  background-color: var(--primary-green) !important;
+}
+
+.home-demo-variant .bg-gold-accent {
+  background-color: var(--gold-accent) !important;
+}
+
+.home-demo-variant .bg-coral-pink {
+  background-color: var(--coral-pink) !important;
+}
+
+.home-demo-variant .bg-background-alt {
+  background-color: var(--background-alt) !important;
+}
+
+.home-demo-variant .border-primary-green {
+  border-color: var(--primary-green) !important;
+}
+
+.home-demo-variant .border-gold-accent {
+  border-color: var(--gold-accent) !important;
+}
+
+.home-demo-variant .border-coral-pink {
+  border-color: var(--coral-pink) !important;
+}
+
+/* Trade Hotel card and container styling */
+.home-demo-variant .group:hover {
+  transform: translateY(-8px) !important;
+}
+
+.home-demo-variant .group:hover .shadow-md {
+  box-shadow: 0 20px 40px rgba(43, 95, 68, 0.15) !important;
+}
+
+/* Hero section styling */
+.home-demo-variant .hero-section {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.9) 0%, 
+    rgba(248, 246, 243, 0.8) 100%
+  );
+  backdrop-filter: blur(10px);
+  border-radius: 24px;
+  padding: 3rem 2rem;
+  margin: 2rem 0;
+  box-shadow: 0 20px 40px rgba(43, 95, 68, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Form container styling */
+.home-demo-variant .form-container {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 2.5rem;
+  box-shadow: 0 25px 50px rgba(43, 95, 68, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.home-demo-variant .form-container:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 30px 60px rgba(43, 95, 68, 0.2);
+}
+
+/* Trade Hotel Button styles */
+.home-demo-variant button {
+  border-radius: 12px !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  font-weight: 500 !important;
+  font-family: 'Inter', 'Helvetica Neue', sans-serif !important;
+}
+
+.home-demo-variant button:hover {
+  transform: translateY(-2px) !important;
+}
+
+/* Primary button styling */
+.home-demo-variant .bg-primary,
+.home-demo-variant .bg-green-600,
+.home-demo-variant .bg-emerald-600 {
+  background-color: var(--primary-green) !important;
+  color: white !important;
+}
+
+.home-demo-variant .bg-primary:hover,
+.home-demo-variant .bg-green-600:hover,
+.home-demo-variant .bg-emerald-600:hover {
+  background-color: var(--primary-green-hover) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 25px rgba(43, 95, 68, 0.3) !important;
+}
+
+/* Secondary button styling */
+.home-demo-variant .bg-pink-500,
+.home-demo-variant .bg-rose-500,
+.home-demo-variant .bg-red-500,
+.home-demo-variant .bg-red-600 {
+  background-color: var(--coral-pink) !important;
+  color: white !important;
+}
+
+.home-demo-variant .bg-pink-500:hover,
+.home-demo-variant .bg-rose-500:hover,
+.home-demo-variant .bg-red-500:hover,
+.home-demo-variant .bg-red-600:hover {
+  background-color: var(--coral-pink-hover) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 25px rgba(232, 93, 117, 0.3) !important;
+}
+
+/* Coral pink accent elements */
+.home-demo-variant .text-coral-pink {
+  color: var(--coral-pink) !important;
+}
+
+.home-demo-variant .bg-coral-pink {
+  background-color: var(--coral-pink) !important;
+}
+
+.home-demo-variant .border-coral-pink {
+  border-color: var(--coral-pink) !important;
+}
+
+.home-demo-variant .bg-coral-pink\/10 {
+  background-color: rgba(232, 93, 117, 0.1) !important;
+}
+
+.home-demo-variant .bg-coral-pink\/5 {
+  background-color: rgba(232, 93, 117, 0.05) !important;
+}
+
+.home-demo-variant .border-coral-pink\/20 {
+  border-color: rgba(232, 93, 117, 0.2) !important;
+}
+
+.home-demo-variant .border-coral-pink\/30 {
+  border-color: rgba(232, 93, 117, 0.3) !important;
+}
+
+/* Newsletter form styling to match image */
+.home-demo-variant .newsletter-form-container {
+  background: var(--warm-peach-pink);
+  border-radius: 20px;
+  padding: 3rem 2rem;
+  box-shadow: 0 20px 40px rgba(107, 47, 47, 0.1);
+  border: 1px solid rgba(107, 47, 47, 0.1);
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.home-demo-variant .text-dark-red-brown {
+  color: var(--dark-red-brown) !important;
+}
+
+.home-demo-variant .bg-dark-red-brown {
+  background-color: var(--dark-red-brown) !important;
+}
+
+.home-demo-variant .bg-warm-peach-pink {
+  background-color: var(--warm-peach-pink) !important;
+}
+
+.home-demo-variant .border-dark-red-brown {
+  border-color: var(--dark-red-brown) !important;
+}
+
+.home-demo-variant .text-dark-red-brown\/80 {
+  color: rgba(107, 47, 47, 0.8) !important;
+}
+
+.home-demo-variant .text-dark-red-brown\/70 {
+  color: rgba(107, 47, 47, 0.7) !important;
+}
+
+/* Newsletter form input styling */
+.home-demo-variant .newsletter-form-container input {
+  transition: all 0.3s ease;
+}
+
+.home-demo-variant .newsletter-form-container input:focus {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(107, 47, 47, 0.2);
+}
+
+.home-demo-variant .newsletter-form-container button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(107, 47, 47, 0.3);
+}
+
+/* Serif font for elegant headings */
+.home-demo-variant .font-serif {
+  font-family: 'Playfair Display', 'Times New Roman', serif;
+}
+
+/* Enhanced spacing for modern design */
+.home-demo-variant .space-y-8 > * + * {
+  margin-top: 3rem !important;
+}
+
+.home-demo-variant .space-y-6 > * + * {
+  margin-top: 2.25rem !important;
+}
+
+.home-demo-variant .space-y-4 > * + * {
+  margin-top: 1.5rem !important;
+}
+
+/* Typography improvements */
+.home-demo-variant h1,
+.home-demo-variant h2,
+.home-demo-variant h3,
+.home-demo-variant h4,
+.home-demo-variant h5,
+.home-demo-variant h6 {
+  font-weight: 700 !important;
+  letter-spacing: -0.025em !important;
+  line-height: 1.2 !important;
+}
+
+.home-demo-variant p {
+  line-height: 1.7 !important;
+}
+
+/* Section spacing */
+.home-demo-variant section {
+  padding-top: 6rem !important;
+  padding-bottom: 6rem !important;
+}
+
+/* Gradient backgrounds for sections */
+.home-demo-variant .bg-gradient-to-br {
+  background-attachment: fixed !important;
+}
+
+/* Performance optimization - reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  .home-demo-variant *,
+  .home-demo-variant *::before,
+  .home-demo-variant *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .home-demo-variant .group:hover {
+    transform: none !important;
+  }
+  
+  .home-demo-variant button:hover {
+    transform: none !important;
+  }
+}

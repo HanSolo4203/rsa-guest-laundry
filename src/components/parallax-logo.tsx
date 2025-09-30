@@ -64,7 +64,7 @@ export function ParallaxLogo() {
       }}
     >
       <Image 
-        src="/express laundry.png" 
+        src="/logo2.png" 
         alt="Express Laundry" 
         width={400}
         height={132}

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { format } from 'date-fns'
-import { Calendar as CalendarIcon, User as UserIcon, Phone as PhoneIcon, ArrowRight as ArrowRightIcon } from 'lucide-react'
+import { ArrowRight as ArrowRightIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { toast } from 'sonner'
@@ -33,17 +33,16 @@ function DefaultDatePicker({
 
   return (
     <div className="relative">
-      <div className="relative">
+      <div className="relative transition-transform duration-200 hover:scale-105">
         <input
           type="date"
           value={value || ''}
           onChange={(e) => onChange(e.target.value)}
           min={todayString}
-          className="w-full bg-transparent border-0 border-b border-white/30 text-white focus:border-white focus:outline-none py-3 sm:py-4 text-lg sm:text-xl rounded-none h-auto p-0 [color-scheme:dark]"
+          className="w-full bg-transparent border-0 border-b border-white/30 text-white focus:border-white focus:outline-none py-3 sm:py-4 text-lg sm:text-xl rounded-none h-auto p-0 [color-scheme:dark] transition-all duration-200 hover:py-4 sm:hover:py-5"
           placeholder={placeholder}
         />
-        <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/30"></div>
-        <CalendarIcon className="absolute right-0 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-white pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/30 transition-all duration-200 hover:h-[3px]"></div>
       </div>
     </div>
   )
@@ -96,7 +95,7 @@ export function BookingForm({ services }: BookingFormProps) {
   }
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 sm:space-y-6" onKeyDown={(e) => {
           // Prevent form submission on Enter key press in input fields
@@ -117,16 +116,15 @@ export function BookingForm({ services }: BookingFormProps) {
                   <FormItem className="min-h-[72px] sm:min-h-[84px]">
                     <FormLabel className="text-white text-base sm:text-lg font-normal">Name</FormLabel>
                     <FormControl>
-                      <div className="relative hide-autofill-icons">
-                        <UserIcon className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                      <div className="relative hide-autofill-icons transition-transform duration-200 hover:scale-105">
                         <input
                           type="text"
                           placeholder=""
                           autoComplete="off"
-                          className="w-full bg-transparent border-0 border-b border-white/30 text-white placeholder-transparent focus:border-white focus:outline-none py-2 sm:py-3 text-lg sm:text-xl pl-8 sm:pl-9"
+                          className="w-full bg-transparent border-0 border-b border-white/30 text-white placeholder-transparent focus:border-white focus:outline-none py-2 sm:py-3 text-lg sm:text-xl transition-all duration-200 hover:py-3 sm:hover:py-4"
                           {...field}
                         />
-                        <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/30"></div>
+                        <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/30 transition-all duration-200 hover:h-[3px]"></div>
                       </div>
                     </FormControl>
                     <div className="min-h-[20px]">
@@ -145,16 +143,15 @@ export function BookingForm({ services }: BookingFormProps) {
                   <FormItem className="min-h-[72px] sm:min-h-[84px]">
                     <FormLabel className="text-white text-base sm:text-lg font-normal">Last Name</FormLabel>
                     <FormControl>
-                      <div className="relative hide-autofill-icons">
-                        <UserIcon className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                      <div className="relative hide-autofill-icons transition-transform duration-200 hover:scale-105">
                         <input
                           type="text"
                           placeholder=""
                           autoComplete="off"
-                          className="w-full bg-transparent border-0 border-b border-white/30 text-white placeholder-transparent focus:border-white focus:outline-none py-2 sm:py-3 text-lg sm:text-xl pl-8 sm:pl-9"
+                          className="w-full bg-transparent border-0 border-b border-white/30 text-white placeholder-transparent focus:border-white focus:outline-none py-2 sm:py-3 text-lg sm:text-xl transition-all duration-200 hover:py-3 sm:hover:py-4"
                           {...field}
                         />
-                        <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/30"></div>
+                        <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/30 transition-all duration-200 hover:h-[3px]"></div>
                       </div>
                     </FormControl>
                     <div className="min-h-[20px]">
@@ -174,17 +171,16 @@ export function BookingForm({ services }: BookingFormProps) {
                   <FormItem className="min-h-[72px] sm:min-h-[84px]">
                     <FormLabel className="text-white text-base sm:text-lg font-normal">Phone</FormLabel>
                     <FormControl>
-                      <div className="relative hide-autofill-icons">
-                        <PhoneIcon className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                      <div className="relative hide-autofill-icons transition-transform duration-200 hover:scale-105">
                         <input
                           type="tel"
                           placeholder=""
                           autoComplete="off"
                           inputMode="tel"
-                          className="w-full bg-transparent border-0 border-b border-white/30 text-white placeholder-transparent focus:border-white focus:outline-none py-2 sm:py-3 text-lg sm:text-xl pl-8 sm:pl-9"
+                          className="w-full bg-transparent border-0 border-b border-white/30 text-white placeholder-transparent focus:border-white focus:outline-none py-2 sm:py-3 text-lg sm:text-xl transition-all duration-200 hover:py-3 sm:hover:py-4"
                           {...field}
                         />
-                        <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/30"></div>
+                        <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/30 transition-all duration-200 hover:h-[3px]"></div>
                       </div>
                     </FormControl>
                     <div className="min-h-[20px]">
@@ -203,9 +199,9 @@ export function BookingForm({ services }: BookingFormProps) {
                   <FormItem className="min-h-[72px] sm:min-h-[84px]">
                     <FormLabel className="text-white text-base sm:text-lg font-normal">Service Type</FormLabel>
                     <FormControl>
-                      <div className="relative">
+                      <div className="relative transition-transform duration-200 hover:scale-105">
                         <select
-                          className="w-full bg-transparent border-0 border-b border-white/30 text-white focus:border-white focus:outline-none py-2 sm:py-3 text-base sm:text-lg appearance-none cursor-pointer pr-8"
+                          className="w-full bg-transparent border-0 border-b border-white/30 text-white focus:border-white focus:outline-none py-2 sm:py-3 text-base sm:text-lg appearance-none cursor-pointer pr-8 transition-all duration-200 hover:py-3 sm:hover:py-4"
                           value={field.value}
                           onChange={(e) => {
                             field.onChange(e)
@@ -220,7 +216,7 @@ export function BookingForm({ services }: BookingFormProps) {
                             </option>
                           ))}
                         </select>
-                        <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/30"></div>
+                        <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/30 transition-all duration-200 hover:h-[3px]"></div>
                         <div className="absolute right-0 top-1/2 transform -translate-y-1/2 pointer-events-none">
                           <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -288,7 +284,7 @@ export function BookingForm({ services }: BookingFormProps) {
               <div className="flex items-end gap-4">
                 <div className="flex-1">
                   <label className="text-white text-base sm:text-lg font-normal block mb-2">Weight (kg)</label>
-                  <div className="relative">
+                  <div className="relative transition-transform duration-200 hover:scale-105">
                     <input
                       type="number"
                       step="0.1"
@@ -296,9 +292,9 @@ export function BookingForm({ services }: BookingFormProps) {
                       placeholder="0.0"
                       value={weight || ''}
                       onChange={(e) => setWeight(parseFloat(e.target.value) || undefined)}
-                      className="w-full bg-transparent border-0 border-b border-white/30 text-white placeholder-white/60 focus:border-white focus:outline-none py-2 sm:py-3 text-lg sm:text-xl"
+                      className="w-full bg-transparent border-0 border-b border-white/30 text-white placeholder-white/60 focus:border-white focus:outline-none py-2 sm:py-3 text-lg sm:text-xl transition-all duration-200 hover:py-3 sm:hover:py-4"
                     />
-                    <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/30"></div>
+                    <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/30 transition-all duration-200 hover:h-[3px]"></div>
                   </div>
                   <p className="text-xs text-white/70 mt-1">
                     Enter the estimated weight of your laundry
@@ -330,10 +326,10 @@ export function BookingForm({ services }: BookingFormProps) {
                   <FormItem className="min-h-[72px] sm:min-h-[84px] md:mb-0">
                     <FormLabel className="text-white text-base sm:text-lg font-normal">Additional Details</FormLabel>
                     <FormControl>
-                      <div className="relative">
+                      <div className="relative transition-transform duration-200 hover:scale-105">
                         <textarea
                           placeholder="Any special requests or notes"
-                          className="w-full bg-transparent border-0 border-b border-white/30 text-white placeholder-white/60 focus:border-white focus:outline-none py-2 sm:py-3 text-lg sm:text-xl min-h-[72px] overflow-hidden resize-none"
+                          className="w-full bg-transparent border-0 border-b border-white/30 text-white placeholder-white/60 focus:border-white focus:outline-none py-2 sm:py-3 text-lg sm:text-xl min-h-[72px] overflow-hidden resize-none transition-all duration-200 hover:py-3 sm:hover:py-4"
                           rows={2}
                           onInput={(e) => {
                             const el = e.currentTarget
@@ -342,7 +338,7 @@ export function BookingForm({ services }: BookingFormProps) {
                           }}
                           {...field}
                         />
-                        <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/30"></div>
+                        <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/30 transition-all duration-200 hover:h-[3px]"></div>
                       </div>
                     </FormControl>
                     <div className="min-h-[20px]">

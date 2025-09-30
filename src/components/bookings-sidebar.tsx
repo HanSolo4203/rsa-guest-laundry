@@ -389,8 +389,8 @@ export function BookingsSidebar({ visible = false, onToggle }: BookingsSidebarPr
                       const isExpanded = expandedBookings.has(booking.id)
 
                       return (
-                        <Card key={booking.id} className={`bg-slate-800/50 ${getCardBorderColor()}`}>
-                          <CardContent className="p-3">
+                        <Card key={booking.id} className={`bg-slate-800/50 ${getCardBorderColor()} transition-all duration-300 ease-out hover:scale-[1.02] hover:shadow-lg hover:z-10 relative`}>
+                          <CardContent className="p-2">
                             {isEditing && editFormData ? (
                               /* Edit Form */
                               <div className="space-y-3">
