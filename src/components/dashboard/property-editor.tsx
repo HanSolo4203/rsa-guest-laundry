@@ -9,8 +9,10 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { GuestFormPreview, type GuestPreviewModel } from '@/components/dashboard/guest-form-preview'
+import { PropertyAccess } from '@/components/dashboard/property-access'
 import { PropertyLinkActions } from '@/components/dashboard/property-link-actions'
 import { brandFallbackColors, brandFontChoices, isBrandFont } from '@/components/property-theme-provider'
 import { buttonContrastWarning, hexForColorInput } from '@/lib/contrast'
@@ -84,14 +86,18 @@ export function PropertyEditor({
   property,
   serviceIds,
   services,
+  initialTab = 'details',
   onCancel,
   onSaved,
+  onShowPrices,
 }: {
   property: Property | null
   serviceIds: string[]
   services: Service[]
+  initialTab?: 'details' | 'access'
   onCancel: () => void
   onSaved: (property: Property) => void
+  onShowPrices?: (property: Property) => void
 }) {
   const slugTouched = useRef(Boolean(property))
   const servicesTouched = useRef(serviceIds.length > 0)
@@ -202,19 +208,19 @@ export function PropertyEditor({
     askRoomNumber: values.ask_room_number,
   }
 
-  return (
+  const details = (
     <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,28rem)]">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 rounded-xl border border-gray-700 bg-gray-800 p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h2 className="text-xl font-semibold text-white">{property ? 'Edit property' : 'Add property'}</h2>
-              <p className="mt-1 text-sm text-gray-400">Branding for this property&apos;s guest booking page.</p>
+              <p className="mt-1 text-sm text-gray-400">Branding, guest booking link, and portal link for this property.</p>
             </div>
             {property ? (
               <PropertyLinkActions slug={values.slug} savedSlug={property.slug} />
             ) : (
-              <p className="max-w-xs text-sm text-gray-400">Save the property to copy its booking link and QR code.</p>
+              <p className="max-w-xs text-sm text-gray-400">Save the property to copy its booking link and portal link.</p>
             )}
           </div>
 
@@ -233,6 +239,7 @@ export function PropertyEditor({
               control={form.control}
               name="slug"
               label="Slug"
+              hint="Used in the guest link and this property's portal link, /portal/your-slug."
               onValueChange={() => {
                 slugTouched.current = true
               }}
@@ -401,6 +408,25 @@ export function PropertyEditor({
       </div>
     </div>
   )
+
+  if (!property) return details
+
+  return (
+    <Tabs defaultValue={initialTab} className="gap-4">
+      <TabsList className="bg-gray-800 text-gray-300">
+        <TabsTrigger value="details" className="text-gray-300 data-[state=active]:bg-gray-700 data-[state=active]:text-white">
+          Details
+        </TabsTrigger>
+        <TabsTrigger value="access" className="text-gray-300 data-[state=active]:bg-gray-700 data-[state=active]:text-white">
+          Access
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent value="details">{details}</TabsContent>
+      <TabsContent value="access">
+        <PropertyAccess property={property} onShowPrices={onShowPrices} />
+      </TabsContent>
+    </Tabs>
+  )
 }
 
 function backgroundLabel(
@@ -420,11 +446,13 @@ function TextField({
   control,
   name,
   label,
+  hint,
   onValueChange,
 }: {
   control: Control<PropertyFormValues>
   name: 'name' | 'slug' | 'heading'
   label: string
+  hint?: string
   onValueChange?: (value: string) => void
 }) {
   return (
@@ -445,6 +473,7 @@ function TextField({
               className={controlClass}
             />
           </FormControl>
+          {hint ? <p className="text-sm text-gray-400">{hint}</p> : null}
           <FormMessage style={{ color: '#fca5a5' }} />
         </FormItem>
       )}

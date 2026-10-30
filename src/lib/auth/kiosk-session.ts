@@ -1,11 +1,12 @@
 import type { User, UserAppMetadata } from '@supabase/supabase-js'
-import { isKioskUser } from './roles'
+import { isKioskUser, isPropertyUser } from './roles'
 
 export const KIOSK_AUTH_STORAGE_KEY = 'sb-kiosk-auth-token'
+export const PORTAL_AUTH_STORAGE_KEY = 'sb-portal-auth-token'
 
 const COOKIE_MAX_AGE_SECONDS = 400 * 24 * 60 * 60
 
-export type AuthScope = 'app' | 'kiosk'
+export type AuthScope = 'app' | 'kiosk' | 'portal'
 
 export type StoredCookie = {
   name: string
@@ -19,7 +20,9 @@ export type CookieWrite = {
 }
 
 export function authScopeFromPath(pathname: string): AuthScope {
-  return pathname === '/kiosk' || pathname.startsWith('/kiosk/') ? 'kiosk' : 'app'
+  if (pathname === '/kiosk' || pathname.startsWith('/kiosk/')) return 'kiosk'
+  if (pathname === '/portal' || pathname.startsWith('/portal/')) return 'portal'
+  return 'app'
 }
 
 export function defaultAuthStorageKey(supabaseUrl: string): string {
@@ -68,29 +71,52 @@ function sessionUser(chunks: StoredCookie[]): Pick<User, 'app_metadata'> | null 
   }
 }
 
-/**
- * Move a kiosk device session out of the shared app cookie.
- * Later dashboard sign-ins then replace only the app cookie.
- */
-export function kioskCookieMigration(
+function relocateSessionCookie(
   cookies: StoredCookie[],
-  supabaseUrl: string
+  fromKey: string,
+  toKey: string,
+  shouldMove: (user: Pick<User, 'app_metadata'> | null) => boolean
 ): CookieWrite[] {
-  const appKey = defaultAuthStorageKey(supabaseUrl)
-  if (chunksFor(cookies, KIOSK_AUTH_STORAGE_KEY).length > 0) return []
+  if (chunksFor(cookies, toKey).length > 0) return []
 
-  const appChunks = chunksFor(cookies, appKey)
-  if (appChunks.length === 0 || !isKioskUser(sessionUser(appChunks))) return []
+  const fromChunks = chunksFor(cookies, fromKey)
+  if (fromChunks.length === 0 || !shouldMove(sessionUser(fromChunks))) return []
 
-  return appChunks.flatMap((chunk) => {
-    const suffix = chunk.name.slice(appKey.length)
+  return fromChunks.flatMap((chunk) => {
+    const suffix = chunk.name.slice(fromKey.length)
     return [
       {
-        name: KIOSK_AUTH_STORAGE_KEY + suffix,
+        name: toKey + suffix,
         value: chunk.value,
         maxAge: COOKIE_MAX_AGE_SECONDS,
       },
       { name: chunk.name, value: '', maxAge: 0 },
     ]
   })
+}
+
+/**
+ * Move a kiosk device session out of the shared app cookie.
+ * Later dashboard sign-ins then replace only the app cookie.
+ */
+export function kioskCookieMigration(cookies: StoredCookie[], supabaseUrl: string): CookieWrite[] {
+  return relocateSessionCookie(
+    cookies,
+    defaultAuthStorageKey(supabaseUrl),
+    KIOSK_AUTH_STORAGE_KEY,
+    isKioskUser
+  )
+}
+
+/**
+ * Move a property portal session out of the shared app cookie.
+ * Dashboard sign-in then replaces only the app cookie.
+ */
+export function portalCookieMigration(cookies: StoredCookie[], supabaseUrl: string): CookieWrite[] {
+  return relocateSessionCookie(
+    cookies,
+    defaultAuthStorageKey(supabaseUrl),
+    PORTAL_AUTH_STORAGE_KEY,
+    isPropertyUser
+  )
 }

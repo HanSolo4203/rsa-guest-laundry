@@ -55,6 +55,7 @@ export interface Property {
   welcome_message: string | null;
   contact_info: string | null;
   ask_room_number: boolean;
+  show_prices: boolean;
   created_at: string;
 }
 
@@ -73,7 +74,7 @@ export interface Booking {
   service_id: string;
   collection_date: string;
   departure_date: string;
-  status: 'pending' | 'confirmed' | 'collected' | 'processing' | 'completed' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'collected' | 'processing' | 'completed' | 'cancelled' | 'delivered';
   total_price?: number;
   additional_details?: string;
   created_at: string;
@@ -90,6 +91,9 @@ export interface Booking {
   finishing_at?: string | null;
   ready_at?: string | null;
   ready_acknowledged_at?: string | null;
+  out_for_delivery_at?: string | null;
+  delivered_at?: string | null;
+  received_at?: string | null;
 }
 
 export interface BookingPropertyTag {
@@ -123,4 +127,53 @@ export interface KioskBooking {
   property_name: string;
   primary_color: string | null;
   room_number: string | null;
+}
+
+export interface PortalProperty {
+  id: string;
+  slug: string;
+  name: string;
+  logo_url: string | null;
+  primary_color: string | null;
+  show_prices: boolean;
+}
+
+export interface PortalBooking {
+  id: string;
+  property_id: string;
+  first_name: string;
+  last_name: string;
+  phone: string;
+  room_number: string | null;
+  service_id: string;
+  service_name: string;
+  collection_date: string;
+  departure_date: string;
+  status: Booking['status'];
+  stage: BookingStage;
+  total_price: number | null;
+  payment_method: 'card' | 'cash' | null;
+  weight_kg: number | null;
+  machine_number: number | null;
+  dryer_number: number | null;
+  additional_details: string | null;
+  created_at: string;
+  completed_at: string | null;
+  weighed_at: string | null;
+  washing_at: string | null;
+  drying_at: string | null;
+  finishing_at: string | null;
+  ready_at: string | null;
+  out_for_delivery_at: string | null;
+  delivered_at: string | null;
+  received_at: string | null;
+}
+
+export type PropertyMemberRole = 'manager' | 'staff'
+
+export interface PropertyMember {
+  userId: string
+  email: string
+  memberRole: PropertyMemberRole
+  createdAt: string
 }

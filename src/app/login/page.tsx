@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useAuth } from '@/contexts/auth-context'
-import { isKioskUser } from '@/lib/auth/roles'
+import { getRole, pathForRole } from '@/lib/auth/roles'
+import { moveSessionToPortal } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 import { Mail, Lock, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -20,8 +21,19 @@ type LoginFormData = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
-  const { signIn } = useAuth()
+  const [noAccess, setNoAccess] = useState(false)
+  const { signIn, signOut } = useAuth()
   const router = useRouter()
+  const showedNoAccess = useRef(false)
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('error') !== 'no-access') return
+    setNoAccess(true)
+    if (showedNoAccess.current) return
+    showedNoAccess.current = true
+    // The toaster subscribes in a later effect, so a toast fired immediately is dropped.
+    window.setTimeout(() => toast.error('No access'), 0)
+  }, [])
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -34,16 +46,35 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormData) => {
     try {
       setIsLoading(true)
-      const { error, user } = await signIn(data.email, data.password)
+      const { error, user, session } = await signIn(data.email, data.password)
 
       if (error) {
         toast.error(error.message || 'Failed to sign in')
         console.error('Login error:', error)
-      } else if (isKioskUser(user)) {
+        return
+      }
+
+      const role = getRole(user)
+      if (role === 'property') {
+        if (!session) {
+          toast.error('Could not open the property portal')
+          return
+        }
+        const moveError = await moveSessionToPortal(session)
+        if (moveError) {
+          toast.error('Could not open the property portal')
+          return
+        }
+        toast.success('Successfully signed in!')
+        router.push('/portal')
+      } else if (role === 'admin') {
+        toast.success('Successfully signed in!')
+        router.push(pathForRole(role))
+      } else if (role === 'kiosk') {
         router.push('/kiosk')
       } else {
-        toast.success('Successfully signed in!')
-        router.push('/dashboard')
+        await signOut()
+        toast.error('No access')
       }
     } catch (error) {
       console.error('Unexpected error during login:', error)
@@ -73,6 +104,11 @@ export default function LoginPage() {
           {/* Login Form */}
           <div className="space-y-6">
             <h1 className="text-4xl font-bold text-white mb-8 text-center">Sign In</h1>
+            {noAccess ? (
+              <p className="mb-6 text-center text-sm text-red-400" role="alert">
+                No access
+              </p>
+            ) : null}
             
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               {/* User Name Field */}

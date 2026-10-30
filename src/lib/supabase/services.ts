@@ -1,4 +1,4 @@
-import { createClient } from './client'
+import { createClient, createPublicClient } from './client'
 import type { BookingFormData } from '@/lib/schemas/booking'
 import { Service, BookingWithService, BookingPropertyTag, ServicePricingTier, Staff, Machine, MachineType } from '@/lib/types/database'
 import { clearPricingCache } from '@/lib/pricing'
@@ -211,6 +211,18 @@ export async function getBookings(): Promise<BookingWithService[]> {
     property: asPropertyTag(booking.property),
     weigher_name: booking.weighed_by ? weigherNames.get(booking.weighed_by) ?? null : null,
   }))
+}
+
+export async function markOutForDelivery(bookingId: string): Promise<void> {
+  const supabase = createClient()
+  const { error } = await supabase.rpc('admin_mark_out_for_delivery', { booking_id: bookingId })
+  if (error) throw new Error(error.message)
+}
+
+export async function markDelivered(bookingId: string): Promise<void> {
+  const supabase = createClient()
+  const { error } = await supabase.rpc('admin_mark_delivered', { booking_id: bookingId })
+  if (error) throw new Error(error.message)
 }
 
 export async function acknowledgeReadyBookings(): Promise<void> {
@@ -465,7 +477,9 @@ export async function updateBooking(id: string, bookingData: {
 }
 
 export async function createBooking(bookingData: BookingFormData & { property_id: string }) {
-  const supabase = createClient()
+  // Property pages use the app auth cookie. A signed-in user who is not a
+  // dashboard admin is rejected by bookings RLS, so the guest form always inserts as anon.
+  const supabase = createPublicClient()
   const roomNumber = bookingData.room_number?.trim() || null
 
   // Anon can insert a booking but cannot read the table back, so do not select the new row.
@@ -486,7 +500,13 @@ export async function createBooking(bookingData: BookingFormData & { property_id
     }])
   
   if (error) {
-    console.error('Error creating booking:', error)
+    console.error(
+      'Error creating booking:',
+      error.code,
+      error.message,
+      error.details,
+      error.hint
+    )
     throw new Error('Failed to create booking')
   }
 }

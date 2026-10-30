@@ -36,6 +36,8 @@ interface PropertyBreakdown {
   bookings: number
   revenue: number
   kg: number
+  turnaroundMs: number | null
+  turnaroundCount: number
 }
 
 interface MonthlyStats {
@@ -57,6 +59,12 @@ interface MonthlyStats {
 function washToReadyMs(booking: BookingWithService): number | null {
   if (!booking.weighed_at || !booking.ready_at) return null
   const duration = new Date(booking.ready_at).getTime() - new Date(booking.weighed_at).getTime()
+  return duration >= 0 ? duration : null
+}
+
+function createdToDeliveredMs(booking: BookingWithService): number | null {
+  if (!booking.delivered_at) return null
+  const duration = new Date(booking.delivered_at).getTime() - new Date(booking.created_at).getTime()
   return duration >= 0 ? duration : null
 }
 
@@ -84,7 +92,7 @@ function formatKg(kg: number): string {
 }
 
 function propertyBreakdown(bookings: BookingWithService[]): PropertyBreakdown[] {
-  const byProperty = new Map<string, PropertyBreakdown>()
+  const byProperty = new Map<string, PropertyBreakdown & { turnaroundTotalMs: number }>()
   for (const booking of bookings) {
     const id = booking.property_id
     const current = byProperty.get(id) ?? {
@@ -94,14 +102,27 @@ function propertyBreakdown(bookings: BookingWithService[]): PropertyBreakdown[] 
       bookings: 0,
       revenue: 0,
       kg: 0,
+      turnaroundMs: null,
+      turnaroundCount: 0,
+      turnaroundTotalMs: 0,
     }
     current.bookings += 1
     current.revenue += bookingRevenue(booking)
     const weight = Number(booking.weight_kg)
     if (Number.isFinite(weight)) current.kg += weight
+    const duration = createdToDeliveredMs(booking)
+    if (duration != null) {
+      current.turnaroundTotalMs += duration
+      current.turnaroundCount += 1
+    }
     byProperty.set(id, current)
   }
-  return [...byProperty.values()].sort((a, b) => b.bookings - a.bookings || a.name.localeCompare(b.name))
+  return [...byProperty.values()]
+    .map(({ turnaroundTotalMs, ...stat }) => ({
+      ...stat,
+      turnaroundMs: stat.turnaroundCount > 0 ? turnaroundTotalMs / stat.turnaroundCount : null,
+    }))
+    .sort((a, b) => b.bookings - a.bookings || a.name.localeCompare(b.name))
 }
 
 export default function AnalyticsPage() {
@@ -546,7 +567,7 @@ export default function AnalyticsPage() {
             By property
           </CardTitle>
           <CardDescription className="text-gray-400">
-            Bookings, revenue, and weight for {selectedMonthLabel}
+            Bookings, revenue, weight, and average time from booking to delivery for {selectedMonthLabel}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -555,7 +576,7 @@ export default function AnalyticsPage() {
               {monthlyStats.propertyStats.map((stat) => (
                 <div key={stat.id} className="flex flex-col gap-4 rounded-lg bg-gray-700/50 p-4 sm:flex-row sm:items-center sm:justify-between">
                   <PropertyBadge name={stat.name} color={stat.color} />
-                  <div className="grid grid-cols-3 gap-4 text-sm sm:text-right">
+                  <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4 sm:text-right">
                     <div>
                       <div className="text-gray-400">Bookings</div>
                       <div className="font-semibold text-white">{stat.bookings}</div>
@@ -567,6 +588,17 @@ export default function AnalyticsPage() {
                     <div>
                       <div className="text-gray-400">Weight</div>
                       <div className="font-semibold text-white">{formatKg(stat.kg)}</div>
+                    </div>
+                    <div>
+                      <div className="text-gray-400">Turnaround</div>
+                      <div className="font-semibold text-purple-300">
+                        {stat.turnaroundMs == null ? '—' : formatDuration(stat.turnaroundMs)}
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        {stat.turnaroundCount === 0
+                          ? 'No deliveries'
+                          : `${stat.turnaroundCount} delivered`}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -798,6 +830,7 @@ export default function AnalyticsPage() {
                     collected: 'bg-indigo-500',
                     processing: 'bg-purple-500',
                     completed: 'bg-green-500',
+                    delivered: 'bg-teal-500',
                     cancelled: 'bg-red-500'
                   }
                   

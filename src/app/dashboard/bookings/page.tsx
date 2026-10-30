@@ -16,6 +16,7 @@ import { formatPrice } from '@/lib/pricing'
 import { useSearch } from '@/contexts/search-context'
 import { PropertyFilter, usePropertyOptions } from '@/components/dashboard/property-filter'
 import { BookingPropertyMeta } from '@/components/property-badge'
+import { DeliveryActions, type DeliveryPatch } from '@/components/dashboard/delivery-actions'
 import { createClient } from '@/lib/supabase/client'
 
 
@@ -27,12 +28,15 @@ const stageLabels: Record<string, string> = {
   ready: 'Ready for delivery',
 }
 
-const stageTimes: { key: 'weighed_at' | 'washing_at' | 'drying_at' | 'finishing_at' | 'ready_at'; label: string }[] = [
+const stageTimes: { key: 'weighed_at' | 'washing_at' | 'drying_at' | 'finishing_at' | 'ready_at' | 'out_for_delivery_at' | 'delivered_at' | 'received_at'; label: string }[] = [
   { key: 'weighed_at', label: 'Weighed' },
   { key: 'washing_at', label: 'Washing' },
   { key: 'drying_at', label: 'Drying' },
   { key: 'finishing_at', label: 'Finishing' },
   { key: 'ready_at', label: 'Ready' },
+  { key: 'out_for_delivery_at', label: 'Out for delivery' },
+  { key: 'delivered_at', label: 'Delivered' },
+  { key: 'received_at', label: 'Received' },
 ]
 
 function formatStageStamp(value: string) {
@@ -70,6 +74,7 @@ const statusColors = {
   collected: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300',
   processing: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
   completed: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+  delivered: 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300',
   cancelled: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
 }
 
@@ -236,6 +241,11 @@ function BookingsPageContent() {
     setSelectedCustomerBooking(booking)
     setCustomerDetailsOpen(true)
   }
+
+  const patchDelivery = (patch: DeliveryPatch) => {
+    setBookings((current) => current.map((row) => (row.id === patch.id ? { ...row, ...patch } : row)))
+  }
+
   return (
     <div className="space-y-8 w-full">
       {/* Page header */}
@@ -448,7 +458,7 @@ function BookingsPageContent() {
                       <TableCell className="text-gray-300">
                         {booking.status === 'pending' ? (
                           <span className="text-sm text-gray-500">R0.00</span>
-                        ) : (booking.status === 'processing' || booking.status === 'completed') && booking.total_price ? (
+                        ) : (booking.status === 'processing' || booking.status === 'completed' || booking.status === 'delivered') && booking.total_price ? (
                           <div>
                             <div className="font-bold text-green-400 text-base">{formatPrice(booking.total_price)}</div>
                             <div className="text-xs text-gray-400">
@@ -463,7 +473,8 @@ function BookingsPageContent() {
                         {renderPaymentMethod(booking.payment_method)}
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end space-x-2">
+                        <div className="flex flex-wrap justify-end gap-2">
+                          <DeliveryActions booking={booking} onChanged={patchDelivery} />
                           <Button 
                             variant="outline" 
                             size="sm" 

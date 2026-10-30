@@ -758,3 +758,16 @@ select:-webkit-autofill:focus {
   box-shadow: 0 0 0 1000px color-mix(in srgb, var(--brand-bg) 88%, var(--brand-primary)) inset;
   transition: background-color 9999s ease-out 0s;
 }
+
+.portal {
+  --portal-primary: #2b5f44;
+  color-scheme: light;
+}
+
+.portal [data-slot='progress'] {
+  background-color: color-mix(in srgb, var(--portal-primary) 16%, white);
+}
+
+.portal [data-slot='progress-indicator'] {
+  background-color: var(--portal-primary);
+}

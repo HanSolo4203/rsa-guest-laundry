@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Building2, PanelRight, Pencil, Plus } from 'lucide-react'
+import { Building2, PanelRight, Pencil, Plus, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -15,7 +15,7 @@ import type { Property, Service } from '@/lib/types/database'
 
 type EditorState =
   | { mode: 'create'; serviceIds: string[] }
-  | { mode: 'edit'; property: Property; serviceIds: string[]; revision: number }
+  | { mode: 'edit'; property: Property; serviceIds: string[]; revision: number; tab: 'details' | 'access' }
   | null
 
 export default function PropertiesPage() {
@@ -46,10 +46,10 @@ export default function PropertiesPage() {
     }
   }, [])
 
-  async function openEdit(property: Property) {
+  async function openEdit(property: Property, tab: 'details' | 'access' = 'details') {
     try {
       const serviceIds = await listPropertyServiceIds(property.id)
-      setEditor({ mode: 'edit', property, serviceIds, revision: Date.now() })
+      setEditor({ mode: 'edit', property, serviceIds, revision: Date.now(), tab })
     } catch (error) {
       console.error(error)
       toast.error(error instanceof Error ? error.message : 'Could not open that property')
@@ -64,7 +64,7 @@ export default function PropertiesPage() {
             <Building2 className="h-8 w-8" />
             Properties
           </h1>
-          <p className="mt-2 text-gray-400">Guest booking pages, branding, and the services each property offers.</p>
+          <p className="mt-2 text-gray-400">Guest booking pages, property portals, branding, and the services each property offers.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button
@@ -96,12 +96,21 @@ export default function PropertiesPage() {
           property={editor.mode === 'edit' ? editor.property : null}
           serviceIds={editor.serviceIds}
           services={services}
+          initialTab={editor.mode === 'edit' ? editor.tab : 'details'}
           onCancel={() => setEditor(null)}
+          onShowPrices={(saved) => {
+            setProperties((current) => current.map((row) => (row.id === saved.id ? saved : row)))
+            setEditor((current) =>
+              current && current.mode === 'edit' && current.property.id === saved.id
+                ? { ...current, property: saved }
+                : current
+            )
+          }}
           onSaved={async (saved) => {
             try {
               await refresh()
               const ids = await listPropertyServiceIds(saved.id)
-              setEditor({ mode: 'edit', property: saved, serviceIds: ids, revision: Date.now() })
+              setEditor({ mode: 'edit', property: saved, serviceIds: ids, revision: Date.now(), tab: 'details' })
             } catch (error) {
               console.error(error)
               toast.error('Property saved, but the list could not be refreshed')
@@ -131,6 +140,16 @@ export default function PropertiesPage() {
                 </div>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                   <PropertyLinkActions slug={property.slug} />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openEdit(property, 'access')}
+                    className="border-gray-600 text-gray-200 hover:bg-gray-700"
+                  >
+                    <Users className="h-3.5 w-3.5" />
+                    Access
+                  </Button>
                   <Button
                     type="button"
                     variant="outline"

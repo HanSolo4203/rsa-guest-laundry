@@ -13,7 +13,7 @@ interface AuthContextType {
   signIn: (
     email: string,
     password: string
-  ) => Promise<{ error: Error | null; user: User | null }>
+  ) => Promise<{ error: Error | null; user: User | null; session: Session | null }>
   signOut: () => Promise<void>
 }
 
@@ -66,12 +66,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email,
       password,
     })
-    return { error, user: data.user }
+    return { error, user: data.user, session: data.session }
   }
 
   const signOut = async () => {
-    // Tablet sign-out clears only the kiosk cookie. The dashboard session stays.
-    await supabase.auth.signOut(scope === 'kiosk' ? { scope: 'local' } : undefined)
+    // Kiosk and portal sign-out clear only that cookie. The dashboard session stays.
+    await supabase.auth.signOut(scope === 'app' ? undefined : { scope: 'local' })
   }
 
   const value = {

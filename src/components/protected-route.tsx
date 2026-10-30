@@ -1,33 +1,60 @@
 'use client'
 
 import { useAuth } from '@/contexts/auth-context'
-import { isKioskUser } from '@/lib/auth/roles'
+import { getRole, pathForRole } from '@/lib/auth/roles'
+import { createClient } from '@/lib/supabase/client'
 import { Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, loading } = useAuth()
+  const { user, loading, signOut } = useAuth()
   const router = useRouter()
-
-  const kioskUser = isKioskUser(user)
+  const role = getRole(user)
+  const [signingOut, setSigningOut] = useState(false)
+  const denied = useRef(false)
 
   useEffect(() => {
-    if (loading) return
+    if (loading || signingOut) return
+
     if (!user) {
-      router.push('/login')
+      router.replace('/login')
       return
     }
-    if (kioskUser) {
-      router.replace('/kiosk')
-    }
-  }, [user, kioskUser, loading, router])
 
-  if (loading || kioskUser) {
+    if (role === 'admin') return
+
+    if (role === 'kiosk' || role === 'property') {
+      router.replace(pathForRole(role))
+      return
+    }
+
+    if (denied.current) return
+    denied.current = true
+
+    const deny = async () => {
+      setSigningOut(true)
+      toast.error('No access')
+      await signOut()
+      router.replace('/login')
+    }
+
+    // The role backfill is in the database before the access token is refreshed.
+    void createClient('app')
+      .auth.refreshSession()
+      .then(async ({ data, error }) => {
+        if (!error && getRole(data.user)) return
+        await deny()
+      })
+      .catch(() => deny())
+  }, [user, role, loading, router, signOut, signingOut])
+
+  if (loading || signingOut || !user || role !== 'admin') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
         <div className="text-center">
@@ -36,10 +63,6 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
         </div>
       </div>
     )
-  }
-
-  if (!user) {
-    return null // Will redirect via useEffect
   }
 
   return <>{children}</>

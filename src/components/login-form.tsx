@@ -16,7 +16,8 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/contexts/auth-context'
-import { isKioskUser } from '@/lib/auth/roles'
+import { getRole, pathForRole } from '@/lib/auth/roles'
+import { moveSessionToPortal } from '@/lib/supabase/client'
 import { Loader2, Lock, Mail } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
@@ -30,7 +31,7 @@ type LoginFormData = z.infer<typeof loginSchema>
 
 export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false)
-  const { signIn } = useAuth()
+  const { signIn, signOut } = useAuth()
   const router = useRouter()
 
   const form = useForm<LoginFormData>({
@@ -44,16 +45,35 @@ export function LoginForm() {
   const onSubmit = async (data: LoginFormData) => {
     try {
       setIsLoading(true)
-      const { error, user } = await signIn(data.email, data.password)
+      const { error, user, session } = await signIn(data.email, data.password)
 
       if (error) {
         toast.error(error.message || 'Failed to sign in')
         console.error('Login error:', error)
-      } else if (isKioskUser(user)) {
+        return
+      }
+
+      const role = getRole(user)
+      if (role === 'property') {
+        if (!session) {
+          toast.error('Could not open the property portal')
+          return
+        }
+        const moveError = await moveSessionToPortal(session)
+        if (moveError) {
+          toast.error('Could not open the property portal')
+          return
+        }
+        toast.success('Successfully signed in!')
+        router.push('/portal')
+      } else if (role === 'admin') {
+        toast.success('Successfully signed in!')
+        router.push(pathForRole(role))
+      } else if (role === 'kiosk') {
         router.push('/kiosk')
       } else {
-        toast.success('Successfully signed in!')
-        router.push('/dashboard')
+        await signOut()
+        toast.error('No access')
       }
     } catch (error) {
       console.error('Unexpected error during login:', error)

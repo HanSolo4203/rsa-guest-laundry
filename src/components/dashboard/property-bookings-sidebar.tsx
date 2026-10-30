@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import { Calendar, ChevronLeft, ChevronRight, Phone, Scale, Search, User, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { DeliveryActions, type DeliveryPatch } from '@/components/dashboard/delivery-actions'
 import { PropertyBadge } from '@/components/property-badge'
 import { createClient } from '@/lib/supabase/client'
 import { getBookings } from '@/lib/supabase/services'
@@ -258,6 +259,15 @@ export function PropertyBookingsSidebar({
                           {booking.additional_details}
                         </p>
                       ) : null}
+                      <DeliveryActions
+                        booking={booking}
+                        tone="light"
+                        onChanged={(patch: DeliveryPatch) => {
+                          setBookings((current) =>
+                            current.map((row) => (row.id === patch.id ? { ...row, ...patch } : row))
+                          )
+                        }}
+                      />
                     </article>
                   )
                 })}

@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Calendar, Users, TrendingUp, Clock, CheckCircle, AlertCircle, CreditCard, Banknote, ArrowUp, ArrowDown, RefreshCw } from 'lucide-react'
+import { Calendar, Users, TrendingUp, Clock, CheckCircle, AlertCircle, CreditCard, Banknote, ArrowUp, ArrowDown, RefreshCw, Truck } from 'lucide-react'
 import Link from 'next/link'
 import { CollectionNotificationBanner } from '@/components/collection-notification-banner'
 import { CustomerDetailsDialog } from '@/components/customer-details-dialog'
@@ -16,6 +16,7 @@ import { useSearch } from '@/contexts/search-context'
 import { DashboardSearch } from '@/components/dashboard-search'
 import { PropertyFilter, usePropertyOptions } from '@/components/dashboard/property-filter'
 import { BookingPropertyMeta } from '@/components/property-badge'
+import { DeliveryActions, type DeliveryPatch } from '@/components/dashboard/delivery-actions'
 import { createClient } from '@/lib/supabase/client'
 
 
@@ -25,6 +26,7 @@ const statusColors = {
   collected: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300',
   processing: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
   completed: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+  delivered: 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300',
   cancelled: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
 }
 
@@ -34,6 +36,7 @@ const statusIcons = {
   collected: CheckCircle,
   processing: AlertCircle,
   completed: CheckCircle,
+  delivered: Truck,
   cancelled: AlertCircle,
 }
 
@@ -240,6 +243,10 @@ export default function DashboardPage() {
   const handleUpdateStatus = (booking: BookingWithService) => {
     setSelectedBooking(booking)
     setStatusDialogOpen(true)
+  }
+
+  const patchDelivery = (patch: DeliveryPatch) => {
+    setBookings((current) => current.map((row) => (row.id === patch.id ? { ...row, ...patch } : row)))
   }
 
   const handleStatusUpdateSuccess = async () => {
@@ -655,7 +662,8 @@ export default function DashboardPage() {
                             </div>
                           </TableCell>
                           <TableCell className="text-right">
-                            <div className="flex justify-end space-x-1 sm:space-x-2">
+                            <div className="flex flex-wrap justify-end gap-1 sm:gap-2">
+                              <DeliveryActions booking={booking} onChanged={patchDelivery} />
                               <Button 
                                 variant="outline" 
                                 size="sm" 
@@ -804,7 +812,8 @@ export default function DashboardPage() {
                           {renderPaymentMethod(booking.payment_method)}
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end space-x-1 sm:space-x-2">
+                          <div className="flex flex-wrap justify-end gap-1 sm:gap-2">
+                            <DeliveryActions booking={booking} onChanged={patchDelivery} />
                             <Button 
                               variant="outline" 
                               size="sm" 
