@@ -14,6 +14,8 @@ import { getBookings } from '@/lib/supabase/services'
 import { BookingWithService } from '@/lib/types/database'
 import { useSearch } from '@/contexts/search-context'
 import { DashboardSearch } from '@/components/dashboard-search'
+import { PropertyFilter, usePropertyOptions } from '@/components/dashboard/property-filter'
+import { BookingPropertyMeta } from '@/components/property-badge'
 import { createClient } from '@/lib/supabase/client'
 
 
@@ -72,11 +74,15 @@ export default function DashboardPage() {
   const [hasNewData, setHasNewData] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const { searchQuery } = useSearch()
+  const properties = usePropertyOptions()
+  const [propertyFilter, setPropertyFilter] = useState('all')
 
   const today = new Date().toISOString().split('T')[0]
+  const filtersActive = Boolean(searchQuery.trim()) || propertyFilter !== 'all'
   
-  // Filter bookings by search query (customer name or phone)
+  // Filter bookings by property and search query (customer name or phone)
   const filteredBookings = bookings.filter(booking => {
+    if (propertyFilter !== 'all' && booking.property_id !== propertyFilter) return false
     if (!searchQuery.trim()) return true
     
     const fullName = `${booking.first_name} ${booking.last_name}`.toLowerCase()
@@ -500,9 +506,12 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Search Bar */}
-      <div className="w-full">
-        <DashboardSearch />
+      {/* Search and property filter */}
+      <div className="flex w-full flex-col gap-4 lg:flex-row lg:items-end">
+        <PropertyFilter properties={properties} value={propertyFilter} onValueChange={setPropertyFilter} />
+        <div className="w-full flex-1">
+          <DashboardSearch />
+        </div>
       </div>
 
       {/* Today&apos;s Collections - Prominent Display */}
@@ -513,14 +522,14 @@ export default function DashboardPage() {
                 <CardTitle className="text-lg sm:text-xl text-white flex items-center">
                   <AlertCircle className="mr-2 h-4 w-4 sm:h-5 sm:w-5 text-orange-400" />
                   Today&apos;s Collections ({todaysCollections.length})
-                  {searchQuery && (
+                  {filtersActive && (
                     <Badge variant="outline" className="ml-2 text-gray-300 border-gray-400">
                       Filtered
                     </Badge>
                   )}
                 </CardTitle>
                 <CardDescription className="text-sm sm:text-base text-gray-400">
-                  {searchQuery ? `Showing ${todaysCollections.length} of ${bookings.length} collections` : 'Bookings scheduled for collection today - action required'}
+                  {filtersActive ? `Showing ${todaysCollections.length} of ${bookings.length} collections` : 'Bookings scheduled for collection today - action required'}
                 </CardDescription>
               </div>
             </div>
@@ -593,6 +602,11 @@ export default function DashboardPage() {
                                   </Badge>
                                 )}
                               </div>
+                              <BookingPropertyMeta
+                                name={booking.property?.name}
+                                color={booking.property?.primary_color}
+                                roomNumber={booking.room_number}
+                              />
                               <span className="text-xs text-orange-300 sm:hidden">{booking.service.name}</span>
                               <span className="text-xs text-orange-300 md:hidden">{booking.phone}</span>
                             </div>
@@ -676,14 +690,14 @@ export default function DashboardPage() {
             <div>
               <CardTitle className="text-lg sm:text-xl text-white flex items-center">
                 All Bookings
-                {searchQuery && (
+                {filtersActive && (
                   <Badge variant="outline" className="ml-2 text-gray-300 border-gray-400">
                     Filtered
                   </Badge>
                 )}
               </CardTitle>
               <CardDescription className="text-sm sm:text-base text-gray-400">
-                {searchQuery ? `Showing ${filteredBookings.length} of ${bookings.length} bookings` : 'Complete list of all bookings in your system'}
+                {filtersActive ? `Showing ${filteredBookings.length} of ${bookings.length} bookings` : 'Complete list of all bookings in your system'}
               </CardDescription>
             </div>
             <Link href="/dashboard/bookings">
@@ -719,7 +733,7 @@ export default function DashboardPage() {
                 ) : filteredBookings.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={9} className="text-center py-8 text-gray-300">
-                        {searchQuery ? 'No bookings found matching your search' : 'No bookings found'}
+                        {filtersActive ? 'No bookings found matching your search' : 'No bookings found'}
                       </TableCell>
                     </TableRow>
                 ) : (
@@ -738,6 +752,11 @@ export default function DashboardPage() {
                                 </Badge>
                               )}
                             </div>
+                            <BookingPropertyMeta
+                              name={booking.property?.name}
+                              color={booking.property?.primary_color}
+                              roomNumber={booking.room_number}
+                            />
                             <span className="text-sm text-gray-400 sm:hidden">{booking.service.name}</span>
                             <span className="text-sm text-gray-400 md:hidden">{new Date(booking.collection_date).toLocaleDateString()}</span>
                             <span className="text-sm text-gray-400 lg:hidden">{new Date(booking.departure_date).toLocaleDateString()}</span>

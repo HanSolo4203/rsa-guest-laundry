@@ -3,13 +3,26 @@
 import { useEffect, useRef, useState } from 'react'
 import { Loader2, X } from 'lucide-react'
 import { GuestName, GuestNotes, ServiceDetail, StayDates } from '@/components/kiosk/guest-facts'
+import { KioskPanel } from '@/components/kiosk/kiosk-panel'
+import { STAGE_ACCENT, STAGE_ACTION } from '@/components/kiosk/kiosk-ui'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { Button } from '@/components/ui/button'
+import { Toggle } from '@/components/ui/toggle'
 import { createClient } from '@/lib/supabase/client'
 import {
   guestDisplayName,
   MACHINE_TIMER_MINUTES,
   machineForStage,
   nextStage,
-  STAGE_STYLES,
   timerReadout,
   type KioskMachine,
 } from '@/lib/kiosk/board'
@@ -148,255 +161,248 @@ export function StageSheet({
   }
   if (!next) return null
 
-  const currentStyle = STAGE_STYLES[booking.stage]
-  const nextStyle = STAGE_STYLES[next]
+  const currentStyle = STAGE_ACCENT[booking.stage]
+  const nextAction = STAGE_ACTION[next]
   const machineNoun = currentMachine?.kind === 'dryer' ? 'Dryer' : 'Washer'
   const minutes = currentMachine ? MACHINE_TIMER_MINUTES[currentMachine.kind] : null
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby={confirming ? 'kiosk-ready-confirm' : 'kiosk-stage-title'}
-      className={cn(
-        'fixed inset-0 z-50 flex flex-col bg-white text-neutral-950',
-        avoidToast && 'pb-40'
-      )}
-    >
-      <div className="max-h-[46%] shrink-0 overflow-y-auto">
-      <header className="flex items-start justify-between gap-4 border-b-2 border-neutral-950 px-6 py-4">
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-start gap-x-10 gap-y-4">
+    <>
+      <KioskPanel
+        title={currentStyle.label}
+        description={`Move ${guest} to ${STAGE_ACCENT[next].label}`}
+        avoidToast={avoidToast}
+        onOpenChange={(open) => {
+          if (!open && !busy) onClose()
+        }}
+      >
+        <header className="flex shrink-0 items-start justify-between gap-3 border-b border-neutral-200 px-4 py-3">
+          <div className="min-w-0 flex-1">
             <GuestName
               id="kiosk-stage-title"
               lastName={booking.last_name}
               firstName={booking.first_name}
               initial={booking.first_name_initial}
-              surnameClassName="text-5xl"
-              givenClassName="text-4xl text-neutral-800"
+              surnameClassName="text-2xl md:text-3xl"
             />
-            <div className="min-w-72 flex-1">
-              <ServiceDetail serviceName={booking.service_name} size="sheet" />
-              <StayDates
-                collectionDate={booking.collection_date}
-                departureDate={booking.departure_date}
-                size="sheet"
-                className="mt-3 text-neutral-800"
-              />
-            </div>
-          </div>
-          <p
-            className={cn(
-              'mt-4 inline-flex rounded-full border-4 px-5 py-2 text-3xl font-bold uppercase',
-              currentStyle.action
-            )}
-          >
-            {currentStyle.label}
-          </p>
-        </div>
-        <button
-          type="button"
-          className="flex size-16 shrink-0 items-center justify-center rounded-2xl border-2 border-neutral-950 bg-white"
-          aria-label="Close"
-          onClick={onClose}
-          disabled={busy}
-        >
-          <X className="size-8" />
-        </button>
-      </header>
-      <GuestNotes notes={booking.additional_details} mode="band" />
-      </div>
-
-      {confirming ? (
-        <div className="flex min-h-0 flex-1 flex-col justify-center gap-8 px-6 py-6">
-          <h3
-            id="kiosk-ready-confirm"
-            className="text-center text-[clamp(2.75rem,5vw,4.5rem)] font-bold leading-tight"
-          >
-            Mark {guest} ready for delivery?
-          </h3>
-          {error ? (
-            <p role="alert" className="text-center text-3xl font-bold text-red-800">
-              {error}
+            <ServiceDetail serviceName={booking.service_name} size="sheet" className="mt-2" />
+            <StayDates
+              collectionDate={booking.collection_date}
+              departureDate={booking.departure_date}
+              size="sheet"
+              className="mt-1"
+            />
+            <p className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-neutral-700 md:text-base">
+              <span className={cn('size-2.5 rounded-full', currentStyle.dot)} aria-hidden="true" />
+              {currentStyle.label}
             </p>
-          ) : null}
-          <div className="grid grid-cols-2 gap-4">
-            <button
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            className="size-12 shrink-0 rounded-xl border-neutral-200 bg-white text-neutral-950 hover:bg-neutral-50 md:size-16"
+            aria-label="Close"
+            onClick={onClose}
+            disabled={busy}
+          >
+            <X className="size-5 md:size-6" />
+          </Button>
+        </header>
+        <div className="max-h-28 shrink-0 overflow-y-auto">
+          <GuestNotes notes={booking.additional_details} mode="band" />
+        </div>
+
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-3">
+            {currentMachine && minutes != null ? (
+              <div className="shrink-0 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3">
+                <p className="text-base font-medium text-neutral-700 md:text-lg">
+                  {machineNoun} {currentMachine.number}
+                </p>
+                {readout && !readout.done ? (
+                  <p className="mt-1 text-3xl font-semibold tabular-nums leading-none text-neutral-950 md:text-4xl">
+                    {readout.text}
+                  </p>
+                ) : (
+                  <>
+                    {readout?.done ? (
+                      <p className="mt-2 text-xl font-semibold text-amber-700 md:text-2xl">Time&apos;s up</p>
+                    ) : null}
+                    <Button
+                      type="button"
+                      className="mt-3 h-12 min-h-12 w-full rounded-xl bg-neutral-950 text-base font-semibold text-white hover:bg-neutral-800 md:h-16 md:text-lg"
+                      onClick={onStartTimer}
+                      disabled={busy}
+                    >
+                      Start {minutes} min timer
+                    </Button>
+                  </>
+                )}
+              </div>
+            ) : null}
+
+            {next === 'drying' ? (
+              <div className="flex min-h-0 flex-1 flex-col gap-3">
+                <div className="shrink-0">
+                  <p className="text-base font-semibold text-neutral-950 md:text-lg">Dryer</p>
+                  <p className="text-sm text-neutral-500 md:text-base">
+                    Optional. Leave them all unselected to skip.
+                  </p>
+                </div>
+                {dryers.length === 0 ? (
+                  <p className="text-base font-medium text-neutral-700 md:text-lg">No dryers are set up.</p>
+                ) : (
+                  <div className="grid auto-rows-min grid-cols-4 content-start gap-2 md:grid-cols-6">
+                    {dryers.map((dryer) => {
+                      const taken = dryersInUse.get(dryer.number)
+                      const selected = dryerNumber === dryer.number
+                      return (
+                        <Toggle
+                          key={dryer.id}
+                          variant="outline"
+                          pressed={selected}
+                          disabled={busy || taken != null}
+                          aria-label={
+                            taken
+                              ? `Dryer ${dryer.number}, in use by ${taken}`
+                              : `Dryer ${dryer.number}`
+                          }
+                          className={cn(
+                            'aspect-square h-auto w-full flex-col gap-1 whitespace-normal rounded-xl border-neutral-200 bg-white p-1 text-neutral-950 hover:bg-neutral-50',
+                            'data-[state=on]:border-neutral-950 data-[state=on]:bg-neutral-950 data-[state=on]:text-white',
+                            'disabled:opacity-100',
+                            taken && 'border-neutral-200 bg-neutral-100 text-neutral-400'
+                          )}
+                          onPressedChange={(on) => {
+                            setDryerNumber(on ? dryer.number : null)
+                            if (!on) setStartDryerTimer(false)
+                            setError(null)
+                          }}
+                        >
+                          <span className="text-xl font-semibold leading-none tabular-nums md:text-2xl">
+                            {dryer.number}
+                          </span>
+                          {taken ? (
+                            <span className="line-clamp-2 text-center text-xs font-medium leading-tight">
+                              {taken}
+                            </span>
+                          ) : null}
+                        </Toggle>
+                      )
+                    })}
+                  </div>
+                )}
+                {dryers.length > 0 && dryers.every((dryer) => dryersInUse.has(dryer.number)) ? (
+                  <p className="text-center text-base font-medium text-neutral-600 md:text-lg">
+                    Every dryer is in use. You can still move this bag on.
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="shrink-0 space-y-3 border-t border-neutral-200 px-4 py-3">
+            {next === 'drying' ? (
+              <Toggle
+                pressed={startDryerTimer}
+                disabled={busy || dryerNumber == null}
+                aria-label={
+                  startDryerTimer
+                    ? `${MACHINE_TIMER_MINUTES.dryer} min timer on`
+                    : `Start ${MACHINE_TIMER_MINUTES.dryer} min timer`
+                }
+                className={cn(
+                  'h-12 min-h-12 w-full rounded-xl border border-neutral-200 bg-white text-base font-semibold text-neutral-950 hover:bg-neutral-50 md:h-16 md:text-lg',
+                  'data-[state=on]:border-orange-500 data-[state=on]:bg-orange-500 data-[state=on]:text-white',
+                  'disabled:opacity-40'
+                )}
+                onPressedChange={setStartDryerTimer}
+              >
+                {startDryerTimer
+                  ? `${MACHINE_TIMER_MINUTES.dryer} min timer on`
+                  : `Start ${MACHINE_TIMER_MINUTES.dryer} min timer`}
+              </Toggle>
+            ) : null}
+
+            {error && !confirming ? (
+              <p role="alert" className="text-center text-base font-medium text-red-700 md:text-lg">
+                {error}
+              </p>
+            ) : null}
+
+            <Button
               type="button"
-              className="h-40 rounded-3xl border-4 border-neutral-950 bg-white text-4xl font-bold"
-              onClick={() => {
-                setError(null)
-                setConfirming(false)
-              }}
-              disabled={busy}
-            >
-              Not yet
-            </button>
-            <button
-              type="button"
-              className="flex h-40 items-center justify-center gap-4 rounded-3xl border-4 border-neutral-950 bg-emerald-600 text-4xl font-bold text-white disabled:border-neutral-300 disabled:bg-neutral-300 disabled:text-neutral-600"
+              className={cn(
+                'h-16 min-h-16 w-full flex-col rounded-xl text-2xl font-semibold md:h-24 md:text-3xl',
+                nextAction
+              )}
               onClick={() => void advance()}
               disabled={busy}
             >
-              {busy ? <Loader2 className="size-10 animate-spin" /> : null}
-              Mark ready
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="flex min-h-0 flex-1 flex-col">
-          <div
-            className={cn(
-              'flex min-h-0 flex-col gap-4 overflow-y-auto px-6 py-4',
-              next === 'drying' || currentMachine ? 'flex-1' : 'shrink-0'
-            )}
-          >
-          {currentMachine && minutes != null ? (
-            <div className="shrink-0 rounded-3xl border-4 border-neutral-950 px-5 py-4">
-              <p className="text-2xl font-semibold">
-                {machineNoun} {currentMachine.number}
-              </p>
-              {readout && !readout.done ? (
-                <p className="mt-1 text-7xl font-bold tabular-nums leading-none">{readout.text}</p>
+              {busy ? (
+                <span className="flex items-center gap-2 text-xl md:text-2xl">
+                  <Loader2 className="size-6 animate-spin" />
+                  Saving
+                </span>
               ) : (
                 <>
-                  {readout?.done ? (
-                    <p className="mt-2 text-5xl font-bold">Time&apos;s up</p>
+                  <span className="leading-none">{STAGE_ACCENT[next].label}</span>
+                  {next === 'drying' ? (
+                    <span className="mt-1 text-sm font-medium normal-case md:text-base">
+                      {dryerNumber != null ? `Dryer ${dryerNumber}` : 'No dryer'}
+                    </span>
                   ) : null}
-                  <button
-                    type="button"
-                    className="mt-3 h-20 w-full rounded-2xl bg-neutral-950 text-3xl font-bold text-white"
-                    onClick={onStartTimer}
-                    disabled={busy}
-                  >
-                    Start {minutes} min timer
-                  </button>
                 </>
               )}
-            </div>
-          ) : null}
-
-          {next === 'drying' ? (
-            <div className="flex min-h-0 flex-1 flex-col gap-3">
-              <div className="shrink-0">
-                <p className="text-3xl font-bold">Dryer</p>
-                <p className="text-2xl font-semibold text-neutral-700">
-                  Optional. Leave them all unselected to skip.
-                </p>
-              </div>
-              {dryers.length === 0 ? (
-                <p className="text-3xl font-semibold">No dryers are set up.</p>
-              ) : (
-                <div className="grid min-h-0 flex-1 auto-rows-fr grid-cols-2 content-start gap-3">
-                  {dryers.map((dryer) => {
-                    const guest = dryersInUse.get(dryer.number)
-                    const selected = dryerNumber === dryer.number
-                    return (
-                      <button
-                        key={dryer.id}
-                        type="button"
-                        disabled={busy || guest != null}
-                        aria-pressed={selected}
-                        aria-label={
-                          guest
-                            ? `Dryer ${dryer.number}, in use by ${guest}`
-                            : `Dryer ${dryer.number}`
-                        }
-                        className={cn(
-                          'flex min-h-32 flex-col items-center justify-center rounded-3xl border-4 px-3 py-4',
-                          guest && 'border-neutral-300 bg-neutral-200 text-neutral-500',
-                          !guest && !selected && 'border-neutral-950 bg-white text-neutral-950',
-                          selected && 'border-neutral-950 bg-neutral-950 text-white'
-                        )}
-                        onClick={() => {
-                          const turningOff = dryerNumber === dryer.number
-                          setDryerNumber(turningOff ? null : dryer.number)
-                          if (turningOff) setStartDryerTimer(false)
-                          setError(null)
-                        }}
-                      >
-                        <span className="text-7xl font-bold leading-none tabular-nums">
-                          {dryer.number}
-                        </span>
-                        {guest ? (
-                          <span className="mt-2 line-clamp-2 text-center text-2xl font-semibold uppercase">
-                            {guest}
-                          </span>
-                        ) : null}
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
-              {dryers.length > 0 && dryers.every((dryer) => dryersInUse.has(dryer.number)) ? (
-                <p className="text-center text-2xl font-semibold">
-                  Every dryer is in use. You can still move this bag on.
-                </p>
-              ) : null}
-            </div>
-          ) : null}
+            </Button>
           </div>
+        </div>
+      </KioskPanel>
 
-          <div
-            className={cn(
-              'space-y-3 border-t-2 border-neutral-950 px-6 py-4',
-              next === 'drying' ? 'shrink-0' : 'flex min-h-0 flex-1 flex-col'
-            )}
-          >
-          {next === 'drying' ? (
-            <button
-              type="button"
-              aria-pressed={startDryerTimer}
-              disabled={busy || dryerNumber == null}
-              className={cn(
-                'h-16 w-full rounded-2xl border-4 text-2xl font-bold disabled:opacity-40',
-                startDryerTimer
-                  ? 'border-orange-800 bg-orange-600 text-white'
-                  : 'border-neutral-950 bg-white text-neutral-950'
-              )}
-              onClick={() => setStartDryerTimer((current) => !current)}
-            >
-              {startDryerTimer
-                ? `${MACHINE_TIMER_MINUTES.dryer} min timer on`
-                : `Start ${MACHINE_TIMER_MINUTES.dryer} min timer`}
-            </button>
-          ) : null}
-
+      <AlertDialog
+        open={confirming}
+        onOpenChange={(open) => {
+          if (!open && !busy) {
+            setError(null)
+            setConfirming(false)
+          }
+        }}
+      >
+        <AlertDialogContent className="border-neutral-200 bg-white text-neutral-950 sm:max-w-md">
+          <AlertDialogHeader className="text-left">
+            <AlertDialogTitle id="kiosk-ready-confirm" className="text-xl font-semibold text-balance md:text-2xl">
+              Mark {guest} ready for delivery?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base text-neutral-500 md:text-lg">
+              This moves the bag to Ready.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
           {error ? (
-            <p role="alert" className="text-center text-3xl font-bold text-red-800">
+            <p role="alert" className="text-base font-medium text-red-700 md:text-lg">
               {error}
             </p>
           ) : null}
-
-          <button
-            type="button"
-            className={cn(
-              'flex w-full shrink-0 flex-col items-center justify-center rounded-3xl border-4 px-6 font-bold uppercase tracking-wide disabled:border-neutral-300 disabled:bg-neutral-300 disabled:text-neutral-600',
-              next === 'drying' ? 'h-36' : 'min-h-64 flex-1',
-              nextStyle.action
-            )}
-            onClick={() => void advance()}
-            disabled={busy}
-          >
-            {busy ? (
-              <span className="flex items-center gap-4 text-5xl">
-                <Loader2 className="size-12 animate-spin" />
-                Saving
-              </span>
-            ) : (
-              <>
-                <span className="text-[clamp(4rem,9vw,6.5rem)] leading-none">{nextStyle.label}</span>
-                {next === 'drying' ? (
-                  <span className="mt-2 text-3xl font-semibold normal-case tracking-normal">
-                    {dryerNumber != null ? `Dryer ${dryerNumber}` : 'No dryer'}
-                  </span>
-                ) : null}
-              </>
-            )}
-          </button>
-          </div>
-        </div>
-      )}
-    </div>
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
+            <AlertDialogCancel
+              disabled={busy}
+              className="h-12 min-h-12 border-neutral-200 bg-white text-base text-neutral-950 hover:bg-neutral-50 md:h-16 md:text-lg"
+            >
+              Not yet
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={busy}
+              className="h-12 min-h-12 bg-emerald-600 text-base text-white hover:bg-emerald-700 md:h-16 md:text-lg"
+              onClick={(event) => {
+                event.preventDefault()
+                void advance()
+              }}
+            >
+              {busy ? <Loader2 className="size-5 animate-spin" /> : null}
+              Mark ready
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }

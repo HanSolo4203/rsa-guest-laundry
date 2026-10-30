@@ -15,7 +15,7 @@ import {
   Package,
   LogOut,
   BarChart3,
-  MessageSquare
+  Building2
 } from 'lucide-react'
 import { ProtectedRoute } from '@/components/protected-route'
 import { useAuth } from '@/contexts/auth-context'
@@ -42,9 +42,9 @@ const navigation = [
     current: false,
   },
   {
-    name: 'Messages',
-    href: '/dashboard/messages',
-    icon: MessageSquare,
+    name: 'Properties',
+    href: '/dashboard/properties',
+    icon: Building2,
     current: false,
   },
   {

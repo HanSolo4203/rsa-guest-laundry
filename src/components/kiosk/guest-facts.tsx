@@ -36,6 +36,7 @@ export function GuestName({
   initial = '',
   id,
   heading = 'h2',
+  className,
   surnameClassName,
   givenClassName,
 }: {
@@ -44,6 +45,7 @@ export function GuestName({
   initial?: string
   id?: string
   heading?: 'h2' | 'h3'
+  className?: string
   surnameClassName?: string
   givenClassName?: string
 }) {
@@ -52,18 +54,22 @@ export function GuestName({
   const Tag = heading
 
   return (
-    <div className="min-w-0">
+    <div className={cn('min-w-0', className)}>
       <Tag
         id={id}
+        title={surname}
         className={cn(
-          'break-words font-bold uppercase leading-none tracking-tight',
+          'truncate font-semibold leading-tight tracking-tight text-neutral-950',
           surnameClassName
         )}
       >
         {surname}
       </Tag>
       {given ? (
-        <p className={cn('mt-2 break-words font-semibold leading-none', givenClassName)}>
+        <p
+          title={given}
+          className={cn('mt-0.5 truncate text-base leading-tight text-neutral-500 md:text-lg', givenClassName)}
+        >
           {given}
         </p>
       ) : null}
@@ -82,16 +88,15 @@ export function ServiceDetail({
 }) {
   const detail = serviceDetail(serviceName)
   const Icon = serviceUsesIron(serviceName) ? IronIcon : FoldIcon
-  const text = size === 'sheet' ? 'text-4xl' : 'text-3xl'
 
   return (
-    <div className={cn('flex items-start gap-3', className)}>
-      <Icon className={cn('mt-0.5 shrink-0', size === 'sheet' ? 'size-14' : 'size-12')} />
+    <div className={cn('flex min-w-0 items-start gap-2 text-neutral-800', className)}>
+      <Icon className={cn('mt-0.5 shrink-0', size === 'sheet' ? 'size-6' : 'size-5')} />
       <div className="min-w-0">
         {detail.colours ? (
-          <p className={cn(text, 'font-bold leading-none')}>{detail.colours}</p>
+          <p className="text-base font-medium leading-snug md:text-lg">{detail.colours}</p>
         ) : null}
-        <p className={cn(text, 'font-bold leading-tight', detail.colours && 'mt-2')}>
+        <p className={cn('text-base font-medium leading-snug md:text-lg', detail.colours && 'mt-0.5')}>
           {detail.work}
         </p>
       </div>
@@ -117,13 +122,13 @@ export function StayDates({
   return (
     <p
       className={cn(
-        'flex flex-wrap gap-x-6 gap-y-1 font-semibold leading-snug',
-        size === 'sheet' ? 'text-3xl' : 'text-2xl',
+        'flex min-w-0 flex-wrap gap-x-3 gap-y-0.5 text-sm font-medium leading-snug text-neutral-500 md:text-base',
+        size === 'sheet' && 'md:text-lg',
         className
       )}
     >
-      {collection ? <span>Collection {collection}</span> : null}
-      {departure ? <span>Departure {departure}</span> : null}
+      {collection ? <span className="truncate">Collection {collection}</span> : null}
+      {departure ? <span className="truncate">Departure {departure}</span> : null}
     </p>
   )
 }
@@ -145,19 +150,18 @@ export function GuestNotes({
       className={cn(
         'text-neutral-950',
         mode === 'band'
-          ? 'border-b-4 border-amber-800 bg-amber-200 px-6 py-3'
-          : 'rounded-2xl border-4 border-amber-800 bg-amber-200 px-4 py-3',
+          ? 'border-b border-amber-200 bg-amber-50 px-4 py-3'
+          : 'rounded-lg border border-amber-200 bg-amber-50 px-3 py-2',
         className
       )}
     >
-      <p className="text-xl font-bold uppercase tracking-wide">Notes</p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">Notes</p>
       <p
         className={cn(
-          'mt-1 whitespace-pre-wrap break-words font-semibold leading-snug',
-          mode === 'scroll' && 'max-h-40 overflow-y-auto text-3xl',
-          mode === 'band' && 'text-3xl',
-          mode === 'clamp' && 'line-clamp-4 text-2xl',
-          mode === 'full' && 'text-4xl'
+          'mt-1 whitespace-pre-wrap break-words text-base font-medium leading-snug text-neutral-900 md:text-lg',
+          mode === 'scroll' && 'max-h-40 overflow-y-auto',
+          mode === 'clamp' && 'line-clamp-4',
+          mode === 'full' && 'text-base md:text-lg'
         )}
       >
         {text}

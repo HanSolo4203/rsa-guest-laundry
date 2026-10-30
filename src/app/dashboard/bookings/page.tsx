@@ -14,6 +14,8 @@ import { BookingStatusDialog } from '@/components/booking-status-dialog'
 import { CustomerDetailsDialog } from '@/components/customer-details-dialog'
 import { formatPrice } from '@/lib/pricing'
 import { useSearch } from '@/contexts/search-context'
+import { PropertyFilter, usePropertyOptions } from '@/components/dashboard/property-filter'
+import { BookingPropertyMeta } from '@/components/property-badge'
 import { createClient } from '@/lib/supabase/client'
 
 
@@ -108,11 +110,15 @@ function BookingsPageContent() {
   const [customerDetailsOpen, setCustomerDetailsOpen] = useState(false)
   const [selectedCustomerBooking, setSelectedCustomerBooking] = useState<BookingWithService | null>(null)
   const [statusFilter, setStatusFilter] = useState('all')
+  const [propertyFilter, setPropertyFilter] = useState('all')
+  const properties = usePropertyOptions()
   const searchParams = useSearchParams()
   const { searchQuery } = useSearch()
+  const filtersActive = Boolean(searchQuery.trim()) || statusFilter !== 'all' || propertyFilter !== 'all'
 
-  // Filter bookings by status, the ready-for-delivery stage, and search query
+  // Filter bookings by property, status, the ready-for-delivery stage, and search query
   const filteredBookings = bookings.filter(booking => {
+    if (propertyFilter !== 'all' && booking.property_id !== propertyFilter) return false
     if (statusFilter === 'ready') {
       if (booking.stage !== 'ready') return false
     } else if (statusFilter !== 'all' && booking.status !== statusFilter) {
@@ -241,7 +247,7 @@ function BookingsPageContent() {
               <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
               <h1 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-purple-200 to-white flex items-center">
                 Bookings
-                {searchQuery && (
+                {filtersActive && (
                   <Badge variant="outline" className="ml-3 text-purple-300 border-purple-400 bg-purple-900/30">
                     Filtered
                   </Badge>
@@ -249,7 +255,7 @@ function BookingsPageContent() {
               </h1>
             </div>
             <p className="text-gray-300 text-lg font-medium">
-              {searchQuery ? `Showing ${filteredBookings.length} of ${bookings.length} bookings` : 'Manage all laundry service bookings'}
+              {filtersActive ? `Showing ${filteredBookings.length} of ${bookings.length} bookings` : 'Manage all laundry service bookings'}
             </p>
             <div className="mt-4 flex items-center gap-4">
               <div className="flex items-center gap-2 text-sm text-gray-400">
@@ -278,11 +284,12 @@ function BookingsPageContent() {
             Filters
           </CardTitle>
           <CardDescription className="text-gray-300">
-            Filter bookings by status and service type
+            Filter bookings by property, status, and service type
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4">
+            <PropertyFilter properties={properties} value={propertyFilter} onValueChange={setPropertyFilter} />
             <div className="flex-1">
               <label className="text-sm font-medium text-gray-300 mb-2 block">Status Filter</label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -370,7 +377,7 @@ function BookingsPageContent() {
                           <Calendar className="h-8 w-8 text-gray-400" />
                         </div>
                         <span className="text-lg">
-                          {searchQuery || statusFilter !== 'all'
+                          {filtersActive
                             ? 'No bookings found matching your filters'
                             : 'No bookings found'}
                         </span>
@@ -383,6 +390,11 @@ function BookingsPageContent() {
                       <TableCell className="font-medium text-white">
                         <div className="flex flex-col">
                           <span className="text-base font-semibold">{booking.first_name} {booking.last_name}</span>
+                          <BookingPropertyMeta
+                            name={booking.property?.name}
+                            color={booking.property?.primary_color}
+                            roomNumber={booking.room_number}
+                          />
                           <span className="text-sm text-gray-400 sm:hidden">{booking.service.name}</span>
                           <span className="text-sm text-gray-400 md:hidden">{new Date(booking.collection_date).toLocaleDateString()}</span>
                           <span className="text-sm text-gray-400 lg:hidden">{new Date(booking.departure_date).toLocaleDateString()}</span>

@@ -1,11 +1,17 @@
 'use client'
 
+import { Timer, WashingMachine } from 'lucide-react'
 import { timerKey, type MachineTimer } from '@/contexts/machine-timers-context'
 import { GuestNotes } from '@/components/kiosk/guest-facts'
+import { KioskEmpty, machineCode, STAGE_ACCENT, timerProgress } from '@/components/kiosk/kiosk-ui'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Progress } from '@/components/ui/progress'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   MACHINE_TIMER_MINUTES,
   serviceDetailLine,
-  STAGE_STYLES,
   timerReadout,
   type KioskMachine,
   type MachineAssignment,
@@ -27,8 +33,8 @@ type MachinesBoardProps = {
 }
 
 const columns = [
-  { key: 'washers', title: 'WASHERS', kind: 'washer' },
-  { key: 'dryers', title: 'DRYERS', kind: 'dryer' },
+  { key: 'washers', title: 'Washers', kind: 'washer' },
+  { key: 'dryers', title: 'Dryers', kind: 'dryer' },
 ] as const
 
 export function MachinesBoard({
@@ -43,115 +49,125 @@ export function MachinesBoard({
   const lists = { washers, dryers }
 
   return (
-    <div className="grid min-h-0 flex-1 grid-cols-2">
-      {columns.map((column) => {
-        const machines = lists[column.key]
-        const assigned = assignments[column.key]
-        const minutes = MACHINE_TIMER_MINUTES[column.kind]
-        const noun = column.kind === 'washer' ? 'Washer' : 'Dryer'
-        return (
-          <section
-            key={column.key}
-            className="flex min-h-0 min-w-0 flex-col border-r-2 border-neutral-950 last:border-r-0"
-            aria-labelledby={`kiosk-machines-${column.key}`}
-          >
-            <header className="flex shrink-0 items-center justify-between gap-3 bg-neutral-950 px-5 py-4 text-white">
-              <h2
-                id={`kiosk-machines-${column.key}`}
-                className="min-w-0 text-[clamp(1.75rem,3.2vw,2.5rem)] font-bold leading-none tracking-tight"
-              >
-                {column.title}
-              </h2>
-              <p className="shrink-0 text-[clamp(3rem,5vw,4.5rem)] font-bold leading-none tabular-nums">
-                {machines.length}
-              </p>
-            </header>
-            <div
-              className={cn(
-                'min-h-0 flex-1 overflow-y-auto bg-neutral-100 p-4',
-                toastClearance && 'pb-40'
-              )}
-            >
+    <ScrollArea className="h-full">
+      <div className={cn('space-y-8 p-3 md:p-4', toastClearance && 'pb-36 md:pb-28')}>
+        {columns.map((column) => {
+          const machines = lists[column.key]
+          const assigned = assignments[column.key]
+          const minutes = MACHINE_TIMER_MINUTES[column.kind]
+          const noun = column.kind === 'washer' ? 'Washer' : 'Dryer'
+          return (
+            <section key={column.key} aria-labelledby={`kiosk-machines-${column.key}`}>
+              <header className="mb-3 flex items-center gap-2">
+                <h2 id={`kiosk-machines-${column.key}`} className="text-base font-semibold text-neutral-950 md:text-lg">
+                  {column.title}
+                </h2>
+                <Badge className="border-transparent bg-neutral-200 text-neutral-800 tabular-nums">
+                  {machines.length}
+                </Badge>
+              </header>
               {machines.length === 0 ? (
-                <p className="px-2 py-8 text-center text-3xl font-semibold text-neutral-800">
-                  No {column.kind === 'washer' ? 'washers' : 'dryers'} are set up.
-                </p>
+                <KioskEmpty
+                  icon={column.kind === 'washer' ? WashingMachine : Timer}
+                  message={`No ${column.kind === 'washer' ? 'washers' : 'dryers'} are set up.`}
+                />
               ) : (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                   {machines.map((machine) => {
                     const guest = assigned.get(machine.number) ?? null
                     const timer = timers[timerKey(column.kind, machine.number)]
                     const active =
                       timer && guest && timer.bookingId === guest.bookingId ? timer : null
                     const readout = active ? timerReadout(active.endsAt, now) : null
-                    const styles = guest ? STAGE_STYLES[guest.stage] : null
+                    const accent = guest ? STAGE_ACCENT[guest.stage] : null
                     const service = guest ? serviceDetailLine(guest.serviceName) : ''
+                    const progress =
+                      active && accent ? timerProgress(active.endsAt, now, column.kind) : 0
                     const label = guest
-                      ? `${noun} ${machine.number}, ${guest.displayName}, ${service}, ${styles?.label}${
+                      ? `${noun} ${machine.number}, ${guest.displayName}, ${service}, ${accent?.label}${
                           guest.notes ? ', has notes' : ''
                         }${readout ? `, ${readout.text}` : ', no timer'}`
                       : `${noun} ${machine.number}, free`
                     return (
-                      <article
+                      <Card
                         key={machine.id}
                         aria-label={label}
                         className={cn(
-                          'flex min-h-64 flex-col items-center justify-center rounded-3xl border-4 px-3 py-5 text-center',
-                          guest && styles
-                            ? styles.card
-                            : 'border-neutral-950 bg-emerald-600 text-white',
+                          'gap-0 overflow-hidden rounded-xl border border-neutral-200 bg-white py-0 shadow-sm',
+                          accent && 'border-l-4',
+                          accent?.border,
                           readout?.done && 'kiosk-alarm'
                         )}
                       >
-                        <p className="text-7xl font-bold leading-none tabular-nums">
-                          {machine.number}
-                        </p>
-                        {guest && styles ? (
-                          <>
-                            <p className="mt-3 line-clamp-2 text-4xl font-bold uppercase leading-none">
-                              {guest.surname}
+                        <CardContent className="flex flex-col gap-2 p-3 md:p-4">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-lg font-semibold tabular-nums text-neutral-950 md:text-xl">
+                              {machineCode(column.kind, machine.number)}
                             </p>
-                            {guest.firstName ? (
-                              <p className="mt-2 line-clamp-1 text-2xl font-semibold leading-none">
-                                {guest.firstName}
+                            <Badge
+                              className={cn(
+                                'border-transparent text-white',
+                                guest ? 'bg-neutral-950' : 'bg-emerald-600'
+                              )}
+                            >
+                              {guest ? 'Busy' : 'Free'}
+                            </Badge>
+                          </div>
+                          {guest && accent ? (
+                            <>
+                              <p className="truncate text-base font-semibold text-neutral-950 md:text-lg" title={guest.surname}>
+                                {guest.surname}
                               </p>
-                            ) : null}
-                            <p className="mt-3 text-2xl font-bold leading-tight">{service}</p>
-                            <GuestNotes notes={guest.notes} mode="clamp" className="mt-3 w-full text-left" />
-                            <p className="mt-3 text-3xl font-bold uppercase">{styles.label}</p>
-                            {readout && !readout.done ? (
-                              <p className="mt-3 text-5xl font-bold tabular-nums leading-none">
-                                {readout.text}
-                              </p>
-                            ) : (
-                              <>
-                                {readout?.done ? (
-                                  <p className="mt-3 text-4xl font-bold">Time&apos;s up</p>
-                                ) : null}
-                                <button
-                                  type="button"
-                                  className="mt-4 h-16 rounded-2xl bg-white px-5 text-2xl font-bold text-neutral-950"
-                                  onClick={() =>
-                                    onStartTimer(column.kind, machine.number, guest.bookingId)
-                                  }
-                                >
-                                  Start {minutes} min
-                                </button>
-                              </>
-                            )}
-                          </>
-                        ) : (
-                          <p className="mt-3 text-4xl font-bold uppercase">Free</p>
-                        )}
-                      </article>
+                              {guest.firstName ? (
+                                <p className="-mt-1 truncate text-sm text-neutral-500 md:text-base">
+                                  {guest.firstName}
+                                </p>
+                              ) : null}
+                              <p className="truncate text-sm text-neutral-600 md:text-base">{service}</p>
+                              <div className="flex items-center gap-2">
+                                <span className={cn('size-2.5 shrink-0 rounded-full', accent.dot)} aria-hidden="true" />
+                                <span className="text-sm font-medium text-neutral-700 md:text-base">{accent.label}</span>
+                              </div>
+                              {guest.notes ? (
+                                <GuestNotes notes={guest.notes} mode="clamp" className="text-left" />
+                              ) : null}
+                              {readout && !readout.done ? (
+                                <div className="space-y-1">
+                                  <Progress
+                                    value={progress}
+                                    className={cn('h-1.5 bg-neutral-200', accent.bar)}
+                                    aria-label={readout.text}
+                                  />
+                                  <p className="text-sm tabular-nums text-neutral-600 md:text-base">{readout.text}</p>
+                                </div>
+                              ) : (
+                                <>
+                                  {readout?.done ? (
+                                    <p className="text-sm font-semibold text-amber-700 md:text-base">Time&apos;s up</p>
+                                  ) : null}
+                                  <Button
+                                    type="button"
+                                    className="h-12 min-h-12 w-full rounded-xl bg-neutral-950 text-base font-semibold text-white hover:bg-neutral-800 md:h-16 md:text-lg"
+                                    onClick={() =>
+                                      onStartTimer(column.kind, machine.number, guest.bookingId)
+                                    }
+                                  >
+                                    Start {minutes} min
+                                  </Button>
+                                </>
+                              )}
+                            </>
+                          ) : null}
+                        </CardContent>
+                      </Card>
                     )
                   })}
                 </div>
               )}
-            </div>
-          </section>
-        )
-      })}
-    </div>
+            </section>
+          )
+        })}
+      </div>
+    </ScrollArea>
   )
 }

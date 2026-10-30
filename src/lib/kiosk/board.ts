@@ -390,6 +390,11 @@ export function toKioskBooking(value: unknown): KioskBooking | null {
       typeof value.additional_details === 'string' ? value.additional_details : null,
     ready_at: typeof value.ready_at === 'string' ? value.ready_at : null,
     property_name: typeof value.property_name === 'string' ? value.property_name : '',
+    primary_color: typeof value.primary_color === 'string' ? value.primary_color : null,
+    room_number:
+      typeof value.room_number === 'string' && value.room_number.trim()
+        ? value.room_number.trim()
+        : null,
   }
 }
 

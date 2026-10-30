@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Loader2 } from 'lucide-react'
+import { KioskWordmark } from '@/components/kiosk/kiosk-ui'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -32,7 +33,7 @@ const deviceLoginSchema = z.object({
 type DeviceLoginValues = z.infer<typeof deviceLoginSchema>
 
 const fieldClass =
-  'h-16 min-h-16 rounded-xl border-2 border-neutral-950 bg-white px-4 text-[22px] text-neutral-950 shadow-none placeholder:text-neutral-600 md:text-[22px]'
+  'h-12 min-h-12 rounded-lg border-neutral-200 bg-white px-3 text-base text-neutral-950 shadow-none placeholder:text-neutral-400 md:h-14 md:text-lg'
 
 export function DeviceLoginForm() {
   const { signIn } = useAuth()
@@ -60,26 +61,25 @@ export function DeviceLoginForm() {
   }
 
   return (
-    <Card className="w-full max-w-xl border-2 border-neutral-950 bg-white text-neutral-950 shadow-none">
-      <CardHeader className="gap-3">
-        <CardTitle className="text-4xl font-semibold text-neutral-950">
+    <Card className="w-full max-w-sm gap-4 border-neutral-200 bg-white py-6 text-neutral-950 shadow-sm">
+      <CardHeader className="gap-2 px-5">
+        <KioskWordmark />
+        <CardTitle className="text-2xl font-semibold tracking-tight text-neutral-950 md:text-3xl">
           Set up this tablet
         </CardTitle>
-        <CardDescription className="text-[22px] leading-snug text-neutral-800">
+        <CardDescription className="text-base leading-snug text-neutral-500 md:text-lg">
           Sign in once with the kiosk device account. Staff will use a PIN after that.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-5">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="min-h-16 text-[22px] text-neutral-950">
-                    Email
-                  </FormLabel>
+                  <FormLabel className="text-base text-neutral-800 md:text-lg">Email</FormLabel>
                   <FormControl>
                     <Input
                       type="email"
@@ -94,7 +94,7 @@ export function DeviceLoginForm() {
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage className="text-[22px] text-red-800" />
+                  <FormMessage className="text-base text-red-700" />
                 </FormItem>
               )}
             />
@@ -103,9 +103,7 @@ export function DeviceLoginForm() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="min-h-16 text-[22px] text-neutral-950">
-                    Password
-                  </FormLabel>
+                  <FormLabel className="text-base text-neutral-800 md:text-lg">Password</FormLabel>
                   <FormControl>
                     <Input
                       type="password"
@@ -116,23 +114,23 @@ export function DeviceLoginForm() {
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage className="text-[22px] text-red-800" />
+                  <FormMessage className="text-base text-red-700" />
                 </FormItem>
               )}
             />
             {formError ? (
-              <p role="alert" className="text-[22px] font-medium text-red-800">
+              <p role="alert" className="text-base font-medium text-red-700 md:text-lg">
                 {formError}
               </p>
             ) : null}
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="h-16 min-h-16 w-full rounded-xl bg-neutral-950 text-[22px] text-white hover:bg-neutral-800"
+              className="h-12 min-h-12 w-full rounded-xl bg-neutral-950 text-base text-white hover:bg-neutral-800 md:h-16 md:text-lg"
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="size-6 animate-spin" />
+                  <Loader2 className="size-5 animate-spin" />
                   Signing in
                 </>
               ) : (

@@ -1,6 +1,6 @@
 import { createClient } from './client'
 import type { BookingFormData } from '@/lib/schemas/booking'
-import { Service, BookingWithService, ServicePricingTier, Staff, Machine, MachineType } from '@/lib/types/database'
+import { Service, BookingWithService, BookingPropertyTag, ServicePricingTier, Staff, Machine, MachineType } from '@/lib/types/database'
 import { clearPricingCache } from '@/lib/pricing'
 
 export type PricingTierInput = {
@@ -158,6 +158,18 @@ export async function deleteService(id: string): Promise<void> {
   }
 }
 
+function asPropertyTag(value: unknown): BookingPropertyTag | null {
+  const row = Array.isArray(value) ? value[0] : value
+  if (!row || typeof row !== 'object') return null
+  const record = row as Record<string, unknown>
+  if (typeof record.id !== 'string' || typeof record.name !== 'string') return null
+  return {
+    id: record.id,
+    name: record.name,
+    primary_color: typeof record.primary_color === 'string' ? record.primary_color : null,
+  }
+}
+
 export async function getBookings(): Promise<BookingWithService[]> {
   const supabase = createClient()
   
@@ -165,7 +177,8 @@ export async function getBookings(): Promise<BookingWithService[]> {
     .from('bookings')
     .select(`
       *,
-      service:services(*)
+      service:services(*),
+      property:properties(id, name, primary_color)
     `)
     .order('collection_date')
   
@@ -195,6 +208,7 @@ export async function getBookings(): Promise<BookingWithService[]> {
 
   return bookings.map((booking) => ({
     ...booking,
+    property: asPropertyTag(booking.property),
     weigher_name: booking.weighed_by ? weigherNames.get(booking.weighed_by) ?? null : null,
   }))
 }
@@ -454,7 +468,8 @@ export async function createBooking(bookingData: BookingFormData & { property_id
   const supabase = createClient()
   const roomNumber = bookingData.room_number?.trim() || null
 
-  const { data, error } = await supabase
+  // Anon can insert a booking but cannot read the table back, so do not select the new row.
+  const { error } = await supabase
     .from('bookings')
     .insert([{
       property_id: bookingData.property_id,
@@ -469,13 +484,9 @@ export async function createBooking(bookingData: BookingFormData & { property_id
       status: 'pending',
       stage: 'to_weigh',
     }])
-    .select()
-    .single()
   
   if (error) {
     console.error('Error creating booking:', error)
     throw new Error('Failed to create booking')
   }
-  
-  return data
 }

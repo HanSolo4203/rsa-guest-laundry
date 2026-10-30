@@ -1,12 +1,14 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Loader2 } from 'lucide-react'
+import { ChevronDown, Inbox, PackageCheck, Scale } from 'lucide-react'
 import { BookingCard } from '@/components/kiosk/booking-card'
+import { KioskEmpty } from '@/components/kiosk/kiosk-ui'
 import { MachinesBoard } from '@/components/kiosk/machines-board'
 import { NotesSheet } from '@/components/kiosk/notes-sheet'
 import { StageSheet } from '@/components/kiosk/stage-sheet'
 import { StageToast } from '@/components/kiosk/stage-toast'
+import { timerProgress } from '@/components/kiosk/kiosk-ui'
 import { WeighInSheet } from '@/components/kiosk/weigh-in-sheet'
 import { useKioskStaff } from '@/contexts/kiosk-staff-context'
 import { timerKey, useMachineTimers, type MachineTimer } from '@/contexts/machine-timers-context'
@@ -24,30 +26,37 @@ import {
 import { createClient } from '@/lib/supabase/client'
 import type { KioskBooking } from '@/lib/types/database'
 import { cn } from '@/lib/utils'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 const columns = [
   {
     key: 'to_weigh',
-    title: 'TO WEIGH',
-    headerClass: 'bg-amber-400 text-neutral-950',
-    bodyClass: 'bg-amber-50',
+    title: 'To weigh',
+    dot: 'bg-amber-500',
     empty: 'No bags waiting',
+    icon: Scale,
   },
   {
     key: 'in_progress',
-    title: 'IN PROGRESS',
-    headerClass: 'bg-blue-700 text-white',
-    bodyClass: 'bg-blue-50',
+    title: 'In progress',
+    dot: 'bg-blue-600',
     empty: 'Nothing in progress',
+    icon: Inbox,
   },
   {
     key: 'ready',
-    title: 'READY',
-    headerClass: 'bg-emerald-700 text-white',
-    bodyClass: 'bg-emerald-50',
+    title: 'Ready',
+    dot: 'bg-emerald-600',
     empty: 'Nothing ready',
+    icon: PackageCheck,
   },
 ] as const
+
+type ColumnKey = (typeof columns)[number]['key']
 
 type UndoToast = {
   id: number
@@ -61,7 +70,12 @@ function cardTimer(booking: KioskBooking, timers: Record<string, MachineTimer>, 
   const timer = timers[timerKey(machine.kind, machine.number)]
   if (!timer || timer.bookingId !== booking.id) return null
   const readout = timerReadout(timer.endsAt, now)
-  return { label: readout.text, alarming: readout.done, endsAt: timer.endsAt }
+  return {
+    label: readout.text,
+    alarming: readout.done,
+    endsAt: timer.endsAt,
+    progress: timerProgress(timer.endsAt, now, machine.kind),
+  }
 }
 
 function undoFailure(message: string): string {
@@ -77,11 +91,11 @@ export default function KioskPage() {
   const { staff } = useKioskStaff()
   const board = useKioskBoard(staff !== null)
   const { timers, now, start, clear, clearBooking, prune } = useMachineTimers()
-  const [tab, setTab] = useState<'board' | 'machines'>('board')
   const [weighing, setWeighing] = useState<KioskBooking | null>(null)
   const [advancing, setAdvancing] = useState<KioskBooking | null>(null)
   const [notesFor, setNotesFor] = useState<KioskBooking | null>(null)
   const [toast, setToast] = useState<UndoToast | null>(null)
+  const [readyOpen, setReadyOpen] = useState(false)
 
   const dismissToast = useCallback(() => setToast(null), [])
 
@@ -152,174 +166,180 @@ export default function KioskPage() {
   const sheetOpen = weighing !== null || notesFor !== null || advancing !== null
   const advancingTimer = advancing ? cardTimer(advancing, timers, now) : null
 
+  const renderBooking = (booking: KioskBooking, columnKey: ColumnKey) => {
+    const timing = cardTimer(booking, timers, now)
+    return (
+      <BookingCard
+        key={booking.id}
+        booking={booking}
+        now={now}
+        timerLabel={timing?.label}
+        timerProgress={timing?.progress}
+        alarming={timing?.alarming}
+        onWeigh={columnKey === 'to_weigh' ? () => setWeighing(booking) : undefined}
+        onAdvance={columnKey === 'in_progress' ? () => setAdvancing(booking) : undefined}
+        onNotes={hasGuestNotes(booking.additional_details) ? () => setNotesFor(booking) : undefined}
+      />
+    )
+  }
+
+  const list = (columnKey: ColumnKey, items: KioskBooking[]) => {
+    const column = columns.find((item) => item.key === columnKey)!
+    if (items.length === 0) {
+      return <KioskEmpty icon={column.icon} message={column.empty} />
+    }
+    return items.map((booking) => renderBooking(booking, columnKey))
+  }
+
   return (
-    <main className="relative flex h-full min-h-0 flex-col">
+    <main className="relative flex h-full min-h-0 flex-col overflow-hidden">
       <h1 className="sr-only">Laundry board</h1>
       <p className="sr-only" aria-live="polite">
         {board.announcement}
       </p>
       <div className="flex min-h-0 flex-1 flex-col" aria-hidden={sheetOpen}>
-        <div role="tablist" aria-label="Kiosk" className="grid shrink-0 grid-cols-2 border-b-2 border-neutral-950">
-          <button
-            type="button"
-            role="tab"
-            id="kiosk-tab-board"
-            aria-selected={tab === 'board'}
-            aria-controls="kiosk-panel-board"
-            className={cn(
-              'h-20 text-3xl font-bold',
-              tab === 'board' ? 'bg-neutral-950 text-white' : 'bg-white text-neutral-950'
-            )}
-            onClick={() => setTab('board')}
-          >
-            Board
-          </button>
-          <button
-            type="button"
-            role="tab"
-            id="kiosk-tab-machines"
-            aria-selected={tab === 'machines'}
-            aria-controls="kiosk-panel-machines"
-            className={cn(
-              'h-20 border-l-2 border-neutral-950 text-3xl font-bold',
-              tab === 'machines' ? 'bg-neutral-950 text-white' : 'bg-white text-neutral-950'
-            )}
-            onClick={() => setTab('machines')}
-          >
-            Machines
-          </button>
-        </div>
-
         {board.loading && board.bookings.length === 0 ? (
-          <div className="flex flex-1 items-center justify-center">
-            <p className="flex items-center gap-4 text-3xl font-semibold">
-              <Loader2 className="size-10 animate-spin" />
-              Loading the board
-            </p>
+          <div className="grid min-h-0 flex-1 content-start gap-3 p-3 md:grid-cols-2 lg:grid-cols-3" aria-busy="true">
+            <p className="sr-only">Loading the board</p>
+            {Array.from({ length: 6 }, (_, index) => (
+              <Skeleton key={index} className="h-36 rounded-xl bg-neutral-200" />
+            ))}
           </div>
         ) : board.error && board.bookings.length === 0 ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-6 px-8 text-center">
-            <p role="alert" className="text-3xl font-semibold">
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
+            <p role="alert" className="text-base font-medium text-neutral-800 md:text-lg">
               {board.error}
             </p>
-            <button
+            <Button
               type="button"
-              className="h-20 rounded-2xl bg-neutral-950 px-10 text-3xl font-bold text-white"
+              className="h-12 min-h-12 rounded-xl bg-neutral-950 px-6 text-base font-semibold text-white hover:bg-neutral-800 md:h-16 md:text-lg"
               onClick={board.reload}
             >
               Try again
-            </button>
+            </Button>
           </div>
         ) : (
           <>
             {board.error ? (
-              <div className="flex shrink-0 items-center justify-between gap-4 border-b-2 border-red-800 bg-red-50 px-5 py-3">
-                <p role="alert" className="text-2xl font-semibold text-red-900">
+              <div className="flex shrink-0 items-center justify-between gap-3 border-b border-red-200 bg-red-50 px-4 py-3">
+                <p role="alert" className="min-w-0 text-base font-medium text-red-900 md:text-lg">
                   {board.error}
                 </p>
-                <button
+                <Button
                   type="button"
-                  className="h-14 shrink-0 rounded-xl border-2 border-neutral-950 bg-white px-5 text-2xl font-bold"
+                  variant="outline"
+                  className="h-12 min-h-12 shrink-0 rounded-xl border-neutral-200 bg-white px-4 text-base font-semibold text-neutral-950 hover:bg-neutral-50"
                   onClick={board.reload}
                 >
                   Try again
-                </button>
+                </Button>
               </div>
             ) : null}
-            {tab === 'board' ? (
-              <div
-                id="kiosk-panel-board"
-                role="tabpanel"
-                aria-labelledby="kiosk-tab-board"
-                className="grid min-h-0 flex-1 grid-cols-3"
-              >
-                {columns.map((column) => {
-                  const items = lists[column.key]
-                  return (
-                    <section
-                      key={column.key}
-                      className="flex min-h-0 min-w-0 flex-col border-r-2 border-neutral-950 last:border-r-0"
-                      aria-labelledby={`kiosk-column-${column.key}`}
-                    >
-                      <header
-                        className={cn(
-                          'flex shrink-0 items-center justify-between gap-3 px-5 py-4',
-                          column.headerClass
-                        )}
-                      >
-                        <h2
-                          id={`kiosk-column-${column.key}`}
-                          className="min-w-0 text-[clamp(1.75rem,3.2vw,2.5rem)] font-bold leading-none tracking-tight"
+            <TabsContent
+              value="board"
+              id="kiosk-panel-board"
+              className="mt-0 flex min-h-0 flex-1 flex-col overflow-hidden"
+            >
+              <div className="flex min-h-0 flex-1 flex-col md:hidden">
+                <Tabs defaultValue="to_weigh" className="flex min-h-0 flex-1 flex-col gap-0">
+                  <div className="shrink-0 px-3 pt-3">
+                    <TabsList className="grid h-auto w-full grid-cols-3 gap-1 bg-neutral-100 p-1">
+                      {columns.map((column) => (
+                        <TabsTrigger
+                          key={column.key}
+                          value={column.key}
+                          className="h-auto min-h-14 flex-col gap-1 px-1 py-1.5 text-base leading-tight text-neutral-600 data-[state=active]:bg-white data-[state=active]:text-neutral-950 data-[state=active]:shadow-sm"
                         >
-                          {column.title}
-                        </h2>
-                        <p className="shrink-0 text-[clamp(3rem,5vw,4.5rem)] font-bold leading-none tabular-nums">
-                          {items.length}
-                        </p>
-                      </header>
-                      <div
-                        className={cn(
-                          'min-h-0 flex-1 space-y-4 overflow-y-auto p-4',
-                          column.bodyClass,
-                          toast && 'pb-40'
-                        )}
-                      >
-                        {items.length === 0 ? (
-                          <p className="px-2 py-8 text-center text-3xl font-semibold text-neutral-700">
-                            {column.empty}
-                          </p>
-                        ) : (
-                          items.map((booking) => {
-                            const timing = cardTimer(booking, timers, now)
-                            return (
-                              <BookingCard
-                                key={booking.id}
-                                booking={booking}
-                                now={now}
-                                timerLabel={timing?.label}
-                                alarming={timing?.alarming}
-                                onWeigh={
-                                  column.key === 'to_weigh'
-                                    ? () => setWeighing(booking)
-                                    : undefined
-                                }
-                                onAdvance={
-                                  column.key === 'in_progress'
-                                    ? () => setAdvancing(booking)
-                                    : undefined
-                                }
-                                onNotes={
-                                  hasGuestNotes(booking.additional_details)
-                                    ? () => setNotesFor(booking)
-                                    : undefined
-                                }
-                              />
-                            )
-                          })
-                        )}
-                      </div>
+                          <span>{column.title}</span>
+                          <Badge className="h-5 min-w-5 border-transparent bg-neutral-200 px-1 text-xs text-neutral-800 tabular-nums">
+                            {lists[column.key].length}
+                          </Badge>
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+                  </div>
+                  {columns.map((column) => (
+                    <TabsContent
+                      key={column.key}
+                      value={column.key}
+                      className="mt-0 min-h-0 flex-1 overflow-hidden"
+                    >
+                      <ScrollArea className="h-full">
+                        <div className={cn('space-y-3 p-3', toast && 'pb-36')}>
+                          {list(column.key, lists[column.key])}
+                        </div>
+                      </ScrollArea>
+                    </TabsContent>
+                  ))}
+                </Tabs>
+              </div>
+
+              <div className="hidden min-h-0 flex-1 flex-col md:flex lg:hidden">
+                <div className="grid min-h-0 flex-1 grid-cols-2 divide-x divide-neutral-200">
+                  {columns.slice(0, 2).map((column) => (
+                    <section key={column.key} className="flex min-h-0 min-w-0 flex-col" aria-labelledby={`kiosk-column-${column.key}`}>
+                      <ColumnHeader id={`kiosk-column-${column.key}`} title={column.title} dot={column.dot} count={lists[column.key].length} />
+                      <ScrollArea className="min-h-0 flex-1">
+                        <div className={cn('space-y-3 p-3', toast && 'pb-28')}>
+                          {list(column.key, lists[column.key])}
+                        </div>
+                      </ScrollArea>
                     </section>
-                  )
-                })}
+                  ))}
+                </div>
+                <section className="shrink-0 border-t border-neutral-200 bg-white">
+                  <button
+                    type="button"
+                    className="flex min-h-16 w-full items-center gap-2 px-4 text-left"
+                    aria-expanded={readyOpen}
+                    aria-controls="kiosk-ready-panel"
+                    onClick={() => setReadyOpen((open) => !open)}
+                  >
+                    <span className="size-2.5 rounded-full bg-emerald-600" aria-hidden="true" />
+                    <span className="text-base font-semibold text-neutral-950">Ready</span>
+                    <Badge className="border-transparent bg-neutral-200 text-neutral-800 tabular-nums">
+                      {lists.ready.length}
+                    </Badge>
+                    <ChevronDown className={cn('ml-auto size-5 text-neutral-500 transition', readyOpen && 'rotate-180')} />
+                  </button>
+                  {readyOpen ? (
+                    <ScrollArea id="kiosk-ready-panel" className="h-[min(40vh,22rem)] border-t border-neutral-200">
+                      <div className={cn('space-y-3 p-3', toast && 'pb-28')}>
+                        {list('ready', lists.ready)}
+                      </div>
+                    </ScrollArea>
+                  ) : null}
+                </section>
               </div>
-            ) : (
-              <div
-                id="kiosk-panel-machines"
-                role="tabpanel"
-                aria-labelledby="kiosk-tab-machines"
-                className="flex min-h-0 flex-1 flex-col"
-              >
-                <MachinesBoard
-                  washers={washers}
-                  dryers={dryers}
-                  assignments={assignments}
-                  timers={timers}
-                  now={now}
-                  toastClearance={toast != null}
-                  onStartTimer={start}
-                />
+
+              <div className="hidden min-h-0 flex-1 lg:grid lg:grid-cols-3 lg:divide-x lg:divide-neutral-200">
+                {columns.map((column) => (
+                  <section key={column.key} className="flex min-h-0 min-w-0 flex-col" aria-labelledby={`kiosk-lg-column-${column.key}`}>
+                    <ColumnHeader id={`kiosk-lg-column-${column.key}`} title={column.title} dot={column.dot} count={lists[column.key].length} />
+                    <ScrollArea className="min-h-0 flex-1">
+                      <div className={cn('space-y-3 p-3', toast && 'pb-28')}>
+                        {list(column.key, lists[column.key])}
+                      </div>
+                    </ScrollArea>
+                  </section>
+                ))}
               </div>
-            )}
+            </TabsContent>
+            <TabsContent
+              value="machines"
+              id="kiosk-panel-machines"
+              className="mt-0 min-h-0 flex-1 overflow-hidden"
+            >
+              <MachinesBoard
+                washers={washers}
+                dryers={dryers}
+                assignments={assignments}
+                timers={timers}
+                now={now}
+                toastClearance={toast != null}
+                onStartTimer={start}
+              />
+            </TabsContent>
           </>
         )}
       </div>
@@ -393,5 +413,29 @@ export default function KioskPage() {
         />
       ) : null}
     </main>
+  )
+}
+
+function ColumnHeader({
+  id,
+  title,
+  dot,
+  count,
+}: {
+  id: string
+  title: string
+  dot: string
+  count: number
+}) {
+  return (
+    <header className="flex shrink-0 items-center gap-2 border-b border-neutral-200 bg-white px-4 py-3">
+      <span className={cn('size-2.5 rounded-full', dot)} aria-hidden="true" />
+      <h2 id={id} className="text-base font-semibold text-neutral-950 md:text-lg">
+        {title}
+      </h2>
+      <Badge className="ml-auto border-transparent bg-neutral-200 text-neutral-800 tabular-nums">
+        {count}
+      </Badge>
+    </header>
   )
 }

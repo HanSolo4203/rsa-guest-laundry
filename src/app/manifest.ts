@@ -8,9 +8,8 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: '/kiosk',
     scope: '/',
     display: 'fullscreen',
-    orientation: 'landscape',
-    background_color: '#ffffff',
-    theme_color: '#ffffff',
+    background_color: '#fafafa',
+    theme_color: '#fafafa',
     icons: [
       {
         src: '/icons/kiosk-192.png',

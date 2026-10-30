@@ -1,4 +1,10 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
+
+export const metadata: Metadata = {
+  title: 'Property not found',
+  description: 'This booking link is missing or no longer active.',
+}
 
 export default function PropertyNotFound() {
   return (

@@ -17,14 +17,25 @@ import {
   ChevronUp,
   User,
   Phone,
-  Clock
+  Clock,
+  Building2
 } from 'lucide-react'
 import { getBookings } from '@/lib/supabase/services'
 import { BookingWithService } from '@/lib/types/database'
+import { PropertyBadge } from '@/components/property-badge'
 
 interface TurnaroundStat {
   averageMs: number
   sampleCount: number
+}
+
+interface PropertyBreakdown {
+  id: string
+  name: string
+  color: string | null
+  bookings: number
+  revenue: number
+  kg: number
 }
 
 interface MonthlyStats {
@@ -40,6 +51,7 @@ interface MonthlyStats {
   serviceTurnaround: { [key: string]: TurnaroundStat }
   overallTurnaroundMs: number | null
   overallTurnaroundCount: number
+  propertyStats: PropertyBreakdown[]
 }
 
 function washToReadyMs(booking: BookingWithService): number | null {
@@ -55,6 +67,41 @@ function formatDuration(ms: number): string {
   if (hours === 0) return `${minutes} min`
   if (minutes === 0) return `${hours}h`
   return `${hours}h ${minutes}m`
+}
+
+function bookingRevenue(booking: BookingWithService): number {
+  if (booking.total_price) return booking.total_price
+  const priceStr = booking.service.price
+  const priceMatch = priceStr.match(/R(\d+)-R(\d+)/)
+  if (priceMatch) return (parseInt(priceMatch[1]) + parseInt(priceMatch[2])) / 2
+  const singlePriceMatch = priceStr.match(/R(\d+)/)
+  return singlePriceMatch ? parseInt(singlePriceMatch[1]) : 0
+}
+
+function formatKg(kg: number): string {
+  const rounded = Math.round(kg * 10) / 10
+  return Number.isInteger(rounded) ? `${rounded} kg` : `${rounded.toFixed(1)} kg`
+}
+
+function propertyBreakdown(bookings: BookingWithService[]): PropertyBreakdown[] {
+  const byProperty = new Map<string, PropertyBreakdown>()
+  for (const booking of bookings) {
+    const id = booking.property_id
+    const current = byProperty.get(id) ?? {
+      id,
+      name: booking.property?.name ?? 'Unknown property',
+      color: booking.property?.primary_color ?? null,
+      bookings: 0,
+      revenue: 0,
+      kg: 0,
+    }
+    current.bookings += 1
+    current.revenue += bookingRevenue(booking)
+    const weight = Number(booking.weight_kg)
+    if (Number.isFinite(weight)) current.kg += weight
+    byProperty.set(id, current)
+  }
+  return [...byProperty.values()].sort((a, b) => b.bookings - a.bookings || a.name.localeCompare(b.name))
 }
 
 export default function AnalyticsPage() {
@@ -82,7 +129,8 @@ export default function AnalyticsPage() {
     dailyRevenue: {},
     serviceTurnaround: {},
     overallTurnaroundMs: null,
-    overallTurnaroundCount: 0
+    overallTurnaroundCount: 0,
+    propertyStats: []
   })
   const [expandedService, setExpandedService] = useState<string | null>(null)
 
@@ -278,11 +326,12 @@ export default function AnalyticsPage() {
       serviceTypeStats,
       statusBreakdown,
       dailyRevenue,
-      serviceTurnaround,
-      overallTurnaroundMs: overallTurnaroundCount > 0 ? overallTotalMs / overallTurnaroundCount : null,
-      overallTurnaroundCount
-    }
+    serviceTurnaround,
+    overallTurnaroundMs: overallTurnaroundCount > 0 ? overallTotalMs / overallTurnaroundCount : null,
+    overallTurnaroundCount,
+    propertyStats: propertyBreakdown(monthlyBookings),
   }
+}
 
   useEffect(() => {
     fetchBookings()
@@ -489,6 +538,47 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="bg-gray-800 border-gray-700">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center gap-2">
+            <Building2 className="h-5 w-5" />
+            By property
+          </CardTitle>
+          <CardDescription className="text-gray-400">
+            Bookings, revenue, and weight for {selectedMonthLabel}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {monthlyStats.propertyStats.length > 0 ? (
+            <div className="space-y-3">
+              {monthlyStats.propertyStats.map((stat) => (
+                <div key={stat.id} className="flex flex-col gap-4 rounded-lg bg-gray-700/50 p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <PropertyBadge name={stat.name} color={stat.color} />
+                  <div className="grid grid-cols-3 gap-4 text-sm sm:text-right">
+                    <div>
+                      <div className="text-gray-400">Bookings</div>
+                      <div className="font-semibold text-white">{stat.bookings}</div>
+                    </div>
+                    <div>
+                      <div className="text-gray-400">Revenue</div>
+                      <div className="font-semibold text-green-400">R{stat.revenue.toFixed(2)}</div>
+                    </div>
+                    <div>
+                      <div className="text-gray-400">Weight</div>
+                      <div className="font-semibold text-white">{formatKg(stat.kg)}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-400">
+              No bookings for {selectedMonthLabel}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Weighed to ready */}
       <Card className="bg-gray-800 border-gray-700">

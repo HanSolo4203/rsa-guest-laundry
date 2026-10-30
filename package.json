@@ -22,10 +22,14 @@
     "@supabase/supabase-js": "^2.58.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cn": "^0.5.1",
     "date-fns": "^4.1.0",
+    "input-otp": "^1.5.0",
     "lucide-react": "^0.544.0",
     "next": "^15.5.28",
     "next-themes": "^0.4.6",
+    "qrcode": "^1.5.4",
+    "radix-ui": "^1.8.1",
     "react": "19.1.0",
     "react-day-picker": "^9.11.0",
     "react-dom": "19.1.0",
@@ -33,12 +37,14 @@
     "sharp": "^0.35.5",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1",
+    "vaul": "^1.1.2",
     "zod": "^4.1.11"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@next/bundle-analyzer": "^15.5.28",
     "@types/node": "^20",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "autoprefixer": "^10.4.20",
@@ -47,6 +53,7 @@
     "postcss": "^8.4.49",
     "prettier": "^3.6.2",
     "tailwindcss": "^3.4.17",
+    "tailwindcss-animate": "^1.0.7",
     "typescript": "^5"
   },
   "engines": {

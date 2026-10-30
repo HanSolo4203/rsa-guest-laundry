@@ -92,9 +92,16 @@ export interface Booking {
   ready_acknowledged_at?: string | null;
 }
 
+export interface BookingPropertyTag {
+  id: string;
+  name: string;
+  primary_color: string | null;
+}
+
 export interface BookingWithService extends Booking {
   service: Service;
   weigher_name?: string | null;
+  property?: BookingPropertyTag | null;
 }
 
 export interface KioskBooking {
@@ -114,4 +121,6 @@ export interface KioskBooking {
   additional_details: string | null;
   ready_at: string | null;
   property_name: string;
+  primary_color: string | null;
+  room_number: string | null;
 }

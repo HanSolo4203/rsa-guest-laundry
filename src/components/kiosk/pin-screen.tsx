@@ -1,17 +1,19 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Loader2 } from 'lucide-react'
+import { Delete, Loader2 } from 'lucide-react'
+import { KioskWordmark } from '@/components/kiosk/kiosk-ui'
 import { Button } from '@/components/ui/button'
-import { createClient } from '@/lib/supabase/client'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
 import type { KioskStaff } from '@/contexts/kiosk-staff-context'
 import { unlockKioskChime } from '@/lib/kiosk/chime'
-import { cn } from '@/lib/utils'
+import { createClient } from '@/lib/supabase/client'
 
 const digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9'] as const
 
 const keyClass =
-  'h-20 min-h-16 w-full rounded-2xl border-2 border-neutral-950 bg-white text-4xl font-semibold text-neutral-950 shadow-none hover:bg-neutral-100 active:bg-neutral-200 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-neutral-950'
+  'aspect-square h-auto w-full rounded-xl border-neutral-200 bg-white text-2xl font-semibold text-neutral-950 shadow-none hover:bg-neutral-50 active:bg-neutral-100'
 
 type PinScreenProps = {
   onUnlock: (staff: KioskStaff) => void
@@ -69,10 +71,9 @@ export function PinScreen({ onUnlock }: PinScreenProps) {
     }
   }
 
-  const press = (digit: string) => {
-    unlockKioskChime()
-    if (submittingRef.current || pinRef.current.length >= 4) return
-    const next = `${pinRef.current}${digit}`
+  const applyPin = (value: string) => {
+    if (submittingRef.current) return
+    const next = value.replace(/\D/g, '').slice(0, 4)
     pinRef.current = next
     setPin(next)
     setError(null)
@@ -80,6 +81,12 @@ export function PinScreen({ onUnlock }: PinScreenProps) {
       submittingRef.current = true
       void submit(next)
     }
+  }
+
+  const press = (digit: string) => {
+    unlockKioskChime()
+    if (submittingRef.current || pinRef.current.length >= 4) return
+    applyPin(`${pinRef.current}${digit}`)
   }
 
   const pressRef = useRef(press)
@@ -90,12 +97,20 @@ export function PinScreen({ onUnlock }: PinScreenProps) {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.metaKey || event.ctrlKey || event.altKey) return
+      const fromOtp = event.target instanceof HTMLInputElement
       if (/^[0-9]$/.test(event.key)) {
+        if (fromOtp) return
         event.preventDefault()
         pressRef.current(event.key)
         return
       }
-      if (event.key === 'Backspace' || event.key === 'Escape') {
+      if (event.key === 'Backspace') {
+        if (fromOtp) return
+        event.preventDefault()
+        clearRef.current()
+        return
+      }
+      if (event.key === 'Escape') {
         event.preventDefault()
         clearRef.current()
       }
@@ -106,81 +121,95 @@ export function PinScreen({ onUnlock }: PinScreenProps) {
   }, [])
 
   return (
-    <div className="flex w-full max-w-lg flex-col items-center gap-6">
-      <div className="text-center">
-        <h1 className="text-4xl font-semibold tracking-tight text-neutral-950">
+    <Card className="w-full max-w-sm gap-4 border-neutral-200 bg-white py-6 text-neutral-950 shadow-sm">
+      <CardHeader className="gap-2 px-5 text-center">
+        <KioskWordmark className="text-center" />
+        <CardTitle className="text-2xl font-semibold tracking-tight text-neutral-950 md:text-3xl">
           Enter your PIN
-        </h1>
-        <p className="mt-3 text-[22px] text-neutral-800">
+        </CardTitle>
+        <CardDescription className="text-base text-neutral-500 md:text-lg">
           Use the keypad to sign in.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4 px-5">
+        <InputOTP
+          maxLength={4}
+          value={pin}
+          inputMode="none"
+          autoFocus
+          disabled={busy}
+          onChange={(value) => {
+            unlockKioskChime()
+            applyPin(value)
+          }}
+          containerClassName="justify-center"
+          aria-label="4 digit PIN"
+        >
+          <InputOTPGroup className="gap-2">
+            {Array.from({ length: 4 }, (_, index) => (
+              <InputOTPSlot
+                key={index}
+                index={index}
+                className="size-12 rounded-lg border border-neutral-200 text-xl text-neutral-950 first:rounded-lg first:border-l last:rounded-lg md:size-14"
+              />
+            ))}
+          </InputOTPGroup>
+        </InputOTP>
+        <p className="sr-only" role="status" aria-live="polite">
+          {pin.length} of 4 digits entered
         </p>
-      </div>
 
-      <div
-        className="flex items-center justify-center gap-6"
-        aria-hidden="true"
-      >
-        {Array.from({ length: 4 }, (_, index) => (
-          <span
-            key={index}
-            className={cn(
-              'h-7 w-7 rounded-full border-2 border-neutral-950',
-              index < pin.length ? 'bg-neutral-950' : 'bg-white'
-            )}
-          />
-        ))}
-      </div>
-      <p className="sr-only" role="status" aria-live="polite">
-        {pin.length} of 4 digits entered
-      </p>
+        <div className="flex min-h-12 items-center justify-center">
+          {error ? (
+            <p role="alert" className="text-center text-base font-medium text-red-700 md:text-lg">
+              {error}
+            </p>
+          ) : busy ? (
+            <p className="flex items-center gap-2 text-base text-neutral-600 md:text-lg">
+              <Loader2 className="size-5 animate-spin" />
+              Checking PIN
+            </p>
+          ) : null}
+        </div>
 
-      <div className="flex min-h-12 items-center justify-center">
-        {error ? (
-          <p role="alert" className="text-center text-[22px] font-medium text-red-800">
-            {error}
-          </p>
-        ) : busy ? (
-          <p className="flex items-center gap-3 text-[22px] text-neutral-800">
-            <Loader2 className="size-6 animate-spin" />
-            Checking PIN
-          </p>
-        ) : null}
-      </div>
-
-      <div className="grid w-full grid-cols-3 gap-4" aria-label="Number pad">
-        {digits.map((digit) => (
+        <div className="grid grid-cols-3 gap-2" aria-label="Number pad">
+          {digits.map((digit) => (
+            <Button
+              key={digit}
+              type="button"
+              variant="outline"
+              disabled={busy}
+              className={keyClass}
+              onClick={() => press(digit)}
+              aria-label={`Digit ${digit}`}
+            >
+              {digit}
+            </Button>
+          ))}
+          <span aria-hidden="true" />
           <Button
-            key={digit}
             type="button"
+            variant="outline"
             disabled={busy}
             className={keyClass}
-            onClick={() => press(digit)}
-            aria-label={`Digit ${digit}`}
+            onClick={() => press('0')}
+            aria-label="Digit 0"
           >
-            {digit}
+            0
           </Button>
-        ))}
-        <span aria-hidden="true" />
-        <Button
-          type="button"
-          disabled={busy}
-          className={keyClass}
-          onClick={() => press('0')}
-          aria-label="Digit 0"
-        >
-          0
-        </Button>
-        <span aria-hidden="true" />
-        <Button
-          type="button"
-          variant="outline"
-          disabled={busy}
-          className="col-span-3 h-20 min-h-16 rounded-2xl border-2 border-neutral-950 bg-white text-[22px] font-semibold text-neutral-950 shadow-none hover:bg-neutral-100"
-          onClick={clear}
-        >
-          Clear
-        </Button>
-      </div>
-    </div>
+          <span aria-hidden="true" />
+          <Button
+            type="button"
+            variant="outline"
+            disabled={busy}
+            className="col-span-3 h-12 min-h-12 rounded-xl border-neutral-200 bg-white text-base font-semibold text-neutral-950 shadow-none hover:bg-neutral-50 md:h-16"
+            onClick={clear}
+          >
+            <Delete className="size-5" />
+            Clear
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   )
 }

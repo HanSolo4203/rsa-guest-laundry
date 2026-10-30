@@ -1,5 +1,9 @@
 import type { Metadata, Viewport } from 'next'
+import { Inter } from 'next/font/google'
 import { KioskShell } from '@/components/kiosk/kiosk-shell'
+import { cn } from '@/lib/utils'
+
+const inter = Inter({ subsets: ['latin'], display: 'swap' })
 
 export const metadata: Metadata = {
   title: 'RSL Kiosk',
@@ -21,7 +25,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#ffffff',
+  themeColor: '#fafafa',
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
@@ -33,7 +37,12 @@ export default function KioskLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="kiosk fixed inset-0 overflow-hidden bg-white text-neutral-950 antialiased">
+    <div
+      className={cn(
+        'kiosk fixed inset-0 overflow-hidden bg-neutral-50 text-base text-neutral-950 antialiased md:text-lg',
+        inter.className
+      )}
+    >
       <KioskShell>{children}</KioskShell>
     </div>
   )

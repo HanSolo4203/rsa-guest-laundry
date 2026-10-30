@@ -25,7 +25,19 @@ const brandFonts = {
 
 export type BrandFont = keyof typeof brandFonts
 
-const fallbackColors = {
+export const brandFontChoices = [
+  { value: 'inter', label: 'Inter' },
+  { value: 'playfair', label: 'Playfair Display' },
+  { value: 'poppins', label: 'Poppins' },
+  { value: 'dm-serif', label: 'DM Serif Display' },
+  { value: 'space-grotesk', label: 'Space Grotesk' },
+] as const satisfies readonly { value: BrandFont; label: string }[]
+
+export function isBrandFont(value: string): value is BrandFont {
+  return brandFontChoices.some((choice) => choice.value === value)
+}
+
+export const brandFallbackColors = {
   primary: '#2B5F44',
   accent: '#84A98C',
   background: '#FFFFFF',
@@ -54,6 +66,7 @@ interface PropertyThemeProviderProps {
   backgroundColor: string | null
   textColor: string | null
   buttonTextColor: string | null
+  className?: string
   children: ReactNode
 }
 
@@ -64,18 +77,19 @@ export function PropertyThemeProvider({
   backgroundColor,
   textColor,
   buttonTextColor,
+  className,
   children,
 }: PropertyThemeProviderProps) {
   const style = {
-    '--brand-primary': brandColor(primaryColor, fallbackColors.primary),
-    '--brand-accent': brandColor(accentColor, fallbackColors.accent),
-    '--brand-bg': brandColor(backgroundColor, fallbackColors.background),
-    '--brand-text': brandColor(textColor, fallbackColors.text),
-    '--brand-button-text': brandColor(buttonTextColor, fallbackColors.buttonText),
+    '--brand-primary': brandColor(primaryColor, brandFallbackColors.primary),
+    '--brand-accent': brandColor(accentColor, brandFallbackColors.accent),
+    '--brand-bg': brandColor(backgroundColor, brandFallbackColors.background),
+    '--brand-text': brandColor(textColor, brandFallbackColors.text),
+    '--brand-button-text': brandColor(buttonTextColor, brandFallbackColors.buttonText),
   } as CSSProperties
 
   return (
-    <div className={`${brandFont(font).className} min-h-dvh`} style={style}>
+    <div className={`${brandFont(font).className} ${className ?? 'min-h-dvh'}`} style={style}>
       {children}
     </div>
   )
