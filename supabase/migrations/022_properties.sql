@@ -259,9 +259,9 @@ CREATE POLICY "bookings_allow_insert_for_anonymous" ON public.bookings
 
 -- ---------------------------------------------------------------------------
 -- property-assets
--- Public bucket: logo and background URLs can be stored on the property and
--- fetched without a signed URL. Listing and writes stay with dashboard admins.
--- Upsert needs SELECT as well as INSERT and UPDATE.
+-- Public read so logo_url and background_url can be fetched without a signed
+-- URL. Insert, update, and delete stay with dashboard admins. Upsert works
+-- because those admins can also select.
 -- ---------------------------------------------------------------------------
 
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
@@ -280,13 +280,10 @@ VALUES (
     ]
 );
 
-CREATE POLICY "property_assets_admin_select" ON storage.objects
+CREATE POLICY "property_assets_public_read" ON storage.objects
     FOR SELECT
-    TO authenticated
-    USING (
-        bucket_id = 'property-assets'
-        AND (SELECT private.is_dashboard_admin())
-    );
+    TO anon, authenticated
+    USING (bucket_id = 'property-assets');
 
 CREATE POLICY "property_assets_admin_insert" ON storage.objects
     FOR INSERT

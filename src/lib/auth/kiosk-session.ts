@@ -1,3 +1,4 @@
+import type { User, UserAppMetadata } from '@supabase/supabase-js'
 import { isKioskUser } from './roles'
 
 export const KIOSK_AUTH_STORAGE_KEY = 'sb-kiosk-auth-token'
@@ -48,7 +49,7 @@ function decodeBase64Url(value: string): string {
   return new TextDecoder().decode(bytes)
 }
 
-function sessionUser(chunks: StoredCookie[]) {
+function sessionUser(chunks: StoredCookie[]): Pick<User, 'app_metadata'> | null {
   const combined = chunks.map((chunk) => chunk.value).join('')
   if (!combined) return null
 
@@ -57,9 +58,11 @@ function sessionUser(chunks: StoredCookie[]) {
       ? decodeBase64Url(combined.slice('base64-'.length))
       : combined
     const session = JSON.parse(json) as {
-      user?: { app_metadata?: { role?: string } }
+      user?: { app_metadata?: UserAppMetadata }
     }
-    return session.user ?? null
+    const appMetadata = session.user?.app_metadata
+    if (!appMetadata) return null
+    return { app_metadata: appMetadata }
   } catch {
     return null
   }
