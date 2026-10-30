@@ -668,3 +668,81 @@ select:-webkit-autofill:focus {
     box-shadow: inset 0 0 0 14px rgba(250, 204, 21, 0.95);
   }
 }
+
+.guest-booking {
+  color: var(--brand-text);
+  background-color: var(--brand-bg);
+  font-family: inherit;
+}
+
+.guest-label {
+  color: var(--brand-text);
+}
+
+.guest-hint {
+  color: color-mix(in srgb, var(--brand-text) 72%, transparent);
+}
+
+.guest-booking .guest-error {
+  color: var(--brand-primary);
+}
+
+.guest-card {
+  background-color: color-mix(in srgb, var(--brand-bg) 90%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brand-primary) 18%, transparent);
+}
+
+.guest-scrim {
+  background-color: color-mix(in srgb, var(--brand-bg) 72%, transparent);
+}
+
+.guest-field {
+  width: 100%;
+  min-height: 3rem;
+  border-radius: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--brand-primary) 28%, var(--brand-bg));
+  background-color: color-mix(in srgb, var(--brand-bg) 88%, var(--brand-primary));
+  color: var(--brand-text);
+  padding: 0.75rem 0.9rem;
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.4;
+  color-scheme: light;
+}
+
+.guest-field:focus {
+  outline: 2px solid var(--brand-accent);
+  outline-offset: 1px;
+  border-color: var(--brand-primary);
+}
+
+.guest-field::placeholder {
+  color: color-mix(in srgb, var(--brand-text) 45%, transparent);
+}
+
+.guest-submit {
+  background-color: var(--brand-primary);
+  color: var(--brand-button-text);
+  font-family: inherit;
+}
+
+.guest-submit:hover:not(:disabled),
+.guest-submit:active:not(:disabled) {
+  background-color: var(--brand-accent);
+  color: var(--brand-button-text);
+}
+
+.guest-booking input:-webkit-autofill,
+.guest-booking input:-webkit-autofill:hover,
+.guest-booking input:-webkit-autofill:focus,
+.guest-booking textarea:-webkit-autofill,
+.guest-booking textarea:-webkit-autofill:hover,
+.guest-booking textarea:-webkit-autofill:focus,
+.guest-booking select:-webkit-autofill,
+.guest-booking select:-webkit-autofill:hover,
+.guest-booking select:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--brand-text);
+  caret-color: var(--brand-text);
+  box-shadow: 0 0 0 1000px color-mix(in srgb, var(--brand-bg) 88%, var(--brand-primary)) inset;
+  transition: background-color 9999s ease-out 0s;
+}

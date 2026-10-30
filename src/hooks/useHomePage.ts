@@ -1,21 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
 import { format } from 'date-fns'
-import { toast } from 'sonner'
-import { bookingSchema, type BookingFormData } from '@/lib/schemas/booking'
 import { 
   getServices, 
-  createBooking, 
   getBookings, 
   updateBookingPaymentMethod, 
   updateBooking 
 } from '@/lib/supabase/services'
 import { Service, BookingWithService } from '@/lib/types/database'
-import { calculatePrice } from '@/lib/pricing'
-import { getTheme, type HomeTheme } from '@/config/homeThemes'
-
-export type HomeVariant = 'default' | 'modern' | 'minimal'
 
 interface UseHomePageReturn {
   // Services
@@ -25,19 +16,6 @@ interface UseHomePageReturn {
   // Home page state
   sidebarVisible: boolean
   setSidebarVisible: (visible: boolean) => void
-  variant: HomeVariant
-  setVariant: (variant: HomeVariant) => void
-  theme: HomeTheme
-  
-  // Booking form state and handlers
-  bookingForm: ReturnType<typeof useForm<BookingFormData>>
-  isSubmittingBooking: boolean
-  weight: number | undefined
-  setWeight: (weight: number | undefined) => void
-  selectedService: string
-  setSelectedService: (service: string) => void
-  calculatedPrice: number
-  onSubmitBooking: (data: BookingFormData) => Promise<void>
   
   // Bookings sidebar state and handlers
   bookings: BookingWithService[]
@@ -86,31 +64,6 @@ export function useHomePage(): UseHomePageReturn {
   
   // Home page state
   const [sidebarVisible, setSidebarVisible] = useState(false)
-  const [variant, setVariant] = useState<HomeVariant>('default')
-  
-  // Booking form state
-  const [isSubmittingBooking, setIsSubmittingBooking] = useState(false)
-  const [weight, setWeight] = useState<number | undefined>(undefined)
-  const [selectedService, setSelectedService] = useState<string>('')
-  const [calculatedPrice, setCalculatedPrice] = useState(0)
-  
-  // Set default dates for form
-  const today = new Date()
-  const tomorrow = new Date()
-  tomorrow.setDate(today.getDate() + 1)
-  
-  const bookingForm = useForm<BookingFormData>({
-    resolver: zodResolver(bookingSchema),
-    defaultValues: {
-      first_name: '',
-      last_name: '',
-      phone: '',
-      service_id: '',
-      collection_date: format(today, 'yyyy-MM-dd'),
-      departure_date: format(tomorrow, 'yyyy-MM-dd'),
-      additional_details: '',
-    },
-  })
   
   // Bookings sidebar state
   const [bookings, setBookings] = useState<BookingWithService[]>([])
@@ -134,25 +87,6 @@ export function useHomePage(): UseHomePageReturn {
   const [saving, setSaving] = useState(false)
   const [expandedBookings, setExpandedBookings] = useState<Set<string>>(new Set())
   const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set([format(new Date(), 'yyyy-MM-dd')]))
-  
-  useEffect(() => {
-    let cancelled = false
-
-    async function updatePrice() {
-      if (!weight || !selectedService) {
-        setCalculatedPrice(0)
-        return
-      }
-
-      const price = await calculatePrice(selectedService, weight)
-      if (!cancelled) setCalculatedPrice(price)
-    }
-
-    void updatePrice()
-    return () => {
-      cancelled = true
-    }
-  }, [weight, selectedService])
   
   // Fetch services
   const fetchServices = useCallback(async () => {
@@ -192,27 +126,6 @@ export function useHomePage(): UseHomePageReturn {
       setLoadingBookings(false)
     }
   }, [])
-  
-  // Booking form submission
-  const onSubmitBooking = useCallback(async (data: BookingFormData) => {
-    setIsSubmittingBooking(true)
-    
-    try {
-      await createBooking(data)
-      toast.success('Booking created successfully!')
-      bookingForm.reset()
-      setWeight(undefined) // Reset weight field
-      setSelectedService('') // Reset selected service
-      
-      // Trigger a custom event to refresh the sidebar
-      window.dispatchEvent(new CustomEvent('bookingAdded'))
-    } catch (error) {
-      toast.error('Failed to create booking. Please try again.')
-      console.error('Booking error:', error)
-    } finally {
-      setIsSubmittingBooking(false)
-    }
-  }, [bookingForm])
   
   // Payment method update
   const handlePaymentMethodUpdate = useCallback(async (bookingId: string, paymentMethod: 'card' | 'cash') => {
@@ -412,19 +325,6 @@ export function useHomePage(): UseHomePageReturn {
     // Home page state
     sidebarVisible,
     setSidebarVisible,
-    variant,
-    setVariant,
-    theme: getTheme(variant),
-    
-    // Booking form state and handlers
-    bookingForm,
-    isSubmittingBooking,
-    weight,
-    setWeight,
-    selectedService,
-    setSelectedService,
-    calculatedPrice,
-    onSubmitBooking,
     
     // Bookings sidebar state and handlers
     bookings,

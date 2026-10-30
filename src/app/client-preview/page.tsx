@@ -1,22 +1,18 @@
 'use client'
 
 import '@/styles/home-demo.css'
-import { BookingForm } from '@/components/home/booking-form'
 import { BookingsSidebar } from '@/components/home/bookings-sidebar'
 import { Toaster } from '@/components/ui/sonner'
 import { Button } from '@/components/ui/button'
 import { Menu, X } from 'lucide-react'
-import { useHomePage, type HomeVariant } from '@/hooks/useHomePage'
+import Link from 'next/link'
+import { useHomePage } from '@/hooks/useHomePage'
 import { DevTools } from '@/components/DevTools'
 
 export default function ClientPreviewPage() {
   const {
-    services,
-    loadingServices,
     sidebarVisible,
     setSidebarVisible,
-    variant,
-    setVariant,
   } = useHomePage()
 
   return (
@@ -39,20 +35,6 @@ export default function ClientPreviewPage() {
             <div className="lens-flare-3" style={{background: 'radial-gradient(circle, rgba(212, 175, 55, 0.6) 0%, rgba(212, 175, 55, 0.3) 35%, transparent 75%)'}}></div>
           </div>
         </div>
-      </div>
-
-      {/* Variant Selector */}
-      <div className="fixed top-4 left-4 z-50">
-        <select
-          value={variant}
-          onChange={(e) => setVariant(e.target.value as HomeVariant)}
-          className="bg-white/90 backdrop-blur-sm border text-charcoal rounded-2xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[rgba(43,95,68,0.5)] shadow-md"
-          style={{borderColor: 'rgba(43, 95, 68, 0.2)'}}
-        >
-          <option value="default">Default</option>
-          <option value="modern">Modern</option>
-          <option value="minimal">Minimal</option>
-        </select>
       </div>
 
       {/* Sidebar Toggle Button */}
@@ -78,13 +60,15 @@ export default function ClientPreviewPage() {
 
           {/* Booking Form Section */}
           <div className="mb-8 sm:mb-12 md:mb-16">
-            {loadingServices ? (
-              <div className="text-center text-text-light text-lg">Loading our amazing services...</div>
-            ) : (
-              <div className="form-container">
-                <BookingForm services={services} variant="minimal" />
+              <div className="form-container text-center py-12">
+                <p className="text-text-light text-lg mb-6">Guest booking now lives on the property page.</p>
+                <Link
+                  href="/trade"
+                  className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#2B5F44] px-6 text-base font-medium text-white"
+                >
+                  Open the Trade booking page
+                </Link>
               </div>
-            )}
           </div>
         </div>
       </div>

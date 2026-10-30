@@ -1,23 +1,18 @@
 'use client'
 
 import '@/styles/home-demo.css'
-import { BookingForm } from '@/components/home/booking-form'
 import { BookingsSidebar } from '@/components/home/bookings-sidebar'
 import { Toaster } from '@/components/ui/sonner'
 import { ParallaxLogo } from '@/components/home/parallax-logo'
 import { Button } from '@/components/ui/button'
 import { Menu, X, Sparkles, MapPin } from 'lucide-react'
-import { useHomePage, type HomeVariant } from '@/hooks/useHomePage'
-import { tradeHotelBrand } from '@/config/clientBrand'
+import Link from 'next/link'
+import { useHomePage } from '@/hooks/useHomePage'
 
 export default function HomeDemo() {
   const {
-    services,
-    loadingServices,
     sidebarVisible,
     setSidebarVisible,
-    variant,
-    setVariant,
   } = useHomePage()
 
   return (
@@ -40,19 +35,6 @@ export default function HomeDemo() {
             <div className="lens-flare-3"></div>
           </div>
         </div>
-      </div>
-
-      {/* Variant Selector */}
-      <div className="fixed top-4 left-4 z-50">
-        <select
-          value={variant}
-          onChange={(e) => setVariant(e.target.value as HomeVariant)}
-          className="bg-slate-800/80 backdrop-blur-sm border border-white/10 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-        >
-          <option value="default">Default</option>
-          <option value="modern">Modern</option>
-          <option value="minimal">Minimal</option>
-        </select>
       </div>
 
       {/* Sidebar Toggle Button */}
@@ -88,11 +70,11 @@ export default function HomeDemo() {
             
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 text-charcoal">
               Welcome to{' '}
-              <span className="text-primary-green">{tradeHotelBrand.companyName}</span>
+              <span className="text-primary-green">The Trade Hotel</span>
             </h1>
             
             <p className="text-xl sm:text-2xl text-text-light mb-4 max-w-2xl mx-auto">
-              {tradeHotelBrand.tagline}
+              A Boutique Hotel In Cape Town CBD
             </p>
             
             <div className="flex items-center justify-center gap-2 text-text-light">
@@ -103,26 +85,20 @@ export default function HomeDemo() {
 
           {/* Booking Form Section */}
           <div className="mb-8 sm:mb-12 md:mb-16">
-            {loadingServices ? (
-              <div className="text-center text-text-light text-lg">Loading our amazing services...</div>
-            ) : (
-              <div className="form-container">
-                <div className="text-center mb-6">
-                  <h2 className="text-2xl sm:text-3xl font-bold text-charcoal mb-2">
-                    Book Your Laundry Service
-                  </h2>
-                  <p className="text-text-light">
-                    Who doesn&apos;t love a deal? Get your laundry done while you explore Cape Town!
-                  </p>
-                  <div className="mt-4">
-                    <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-coral-pink/10 text-coral-pink border border-coral-pink/20">
-                      🔥 Trade Hotel Special Rate
-                    </span>
-                  </div>
-                </div>
-                <BookingForm services={services} variant="minimal" />
+              <div className="form-container text-center">
+                <h2 className="text-2xl sm:text-3xl font-bold text-charcoal mb-2">
+                  Book Your Laundry Service
+                </h2>
+                <p className="text-text-light mb-6">
+                  Guest booking now lives on the property page.
+                </p>
+                <Link
+                  href="/trade"
+                  className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#2B5F44] px-6 text-base font-medium text-white"
+                >
+                  Open the Trade booking page
+                </Link>
               </div>
-            )}
           </div>
         </div>
       </div>

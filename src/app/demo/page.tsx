@@ -1,7 +1,6 @@
 'use client'
 
 import '@/styles/home-demo.css'
-import { BookingForm } from '@/components/home/booking-form'
 import { BookingsSidebar } from '@/components/home/bookings-sidebar'
 import { Toaster } from '@/components/ui/sonner'
 import { ParallaxLogo } from '@/components/home/parallax-logo'
@@ -9,18 +8,15 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Menu, X, Star, CheckCircle, ArrowRight, Quote, Sparkles, MapPin } from 'lucide-react'
-import { useHomePage, type HomeVariant } from '@/hooks/useHomePage'
+import Link from 'next/link'
+import { useHomePage } from '@/hooks/useHomePage'
 import { DevTools } from '@/components/DevTools'
-import { tradeHotelBrand } from '@/config/clientBrand'
 
 export default function DemoPage() {
   const {
     services,
-    loadingServices,
     sidebarVisible,
     setSidebarVisible,
-    variant,
-    setVariant,
   } = useHomePage()
 
   return (
@@ -61,11 +57,11 @@ export default function DemoPage() {
             
             <h1 className="text-5xl md:text-6xl font-bold text-charcoal mb-8 leading-tight">
               Welcome to{' '}
-              <span className="text-primary-green">{tradeHotelBrand.companyName}</span>
+              <span className="text-primary-green">The Trade Hotel</span>
             </h1>
             
             <p className="text-xl md:text-2xl text-text-light mb-8 max-w-3xl mx-auto leading-relaxed">
-              {tradeHotelBrand.tagline}
+              A Boutique Hotel In Cape Town CBD
             </p>
             
             <div className="flex items-center justify-center gap-2 text-text-light mb-12">
@@ -339,12 +335,13 @@ export default function DemoPage() {
               </p>
             </div>
             
-            <div className="form-container">
-              {loadingServices ? (
-                <div className="text-center text-text-light py-12">Loading our amazing services...</div>
-              ) : (
-                <BookingForm services={services} variant="minimal" />
-              )}
+            <div className="form-container text-center">
+              <Link
+                href="/trade"
+                className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#2B5F44] px-6 text-base font-medium text-white"
+              >
+                Open the Trade booking page
+              </Link>
             </div>
           </div>
         </section>
@@ -358,19 +355,6 @@ export default function DemoPage() {
         >
           {sidebarVisible ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </Button>
-
-        {/* Variant Selector */}
-        <div className="fixed top-6 left-6 z-50">
-          <select
-            value={variant}
-            onChange={(e) => setVariant(e.target.value as HomeVariant)}
-            className="bg-white/90 backdrop-blur-sm border border-primary-green/20 text-charcoal rounded-2xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-green/50 shadow-md"
-          >
-            <option value="default">Default</option>
-            <option value="modern">Modern</option>
-            <option value="minimal">Minimal</option>
-          </select>
-        </div>
 
         {/* Mobile Overlay */}
         {sidebarVisible && (

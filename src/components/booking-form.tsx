@@ -15,6 +15,7 @@ import { calculatePrice, formatPrice } from '@/lib/pricing'
 
 interface BookingFormProps {
   services: Service[]
+  propertyId: string
 }
 
 // Default Date Picker Component
@@ -48,7 +49,7 @@ function DefaultDatePicker({
   )
 }
 
-export function BookingForm({ services }: BookingFormProps) {
+export function BookingForm({ services, propertyId }: BookingFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [weight, setWeight] = useState<number | undefined>(undefined)
   const [selectedService, setSelectedService] = useState<string>('')
@@ -95,7 +96,7 @@ export function BookingForm({ services }: BookingFormProps) {
     setIsSubmitting(true)
     
     try {
-      await createBooking(data)
+      await createBooking({ ...data, property_id: propertyId })
       toast.success('Booking created successfully!')
       form.reset()
       setWeight(undefined) // Reset weight field

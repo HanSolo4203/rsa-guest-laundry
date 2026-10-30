@@ -1,4 +1,5 @@
 import { createClient } from './client'
+import type { BookingFormData } from '@/lib/schemas/booking'
 import { Service, BookingWithService, ServicePricingTier, Staff, Machine, MachineType } from '@/lib/types/database'
 import { clearPricingCache } from '@/lib/pricing'
 
@@ -449,20 +450,25 @@ export async function updateBooking(id: string, bookingData: {
   return data
 }
 
-export async function createBooking(bookingData: {
-  first_name: string
-  last_name: string
-  phone: string
-  service_id: string
-  collection_date: string
-  departure_date: string
-  additional_details?: string
-}) {
+export async function createBooking(bookingData: BookingFormData & { property_id: string }) {
   const supabase = createClient()
-  
+  const roomNumber = bookingData.room_number?.trim() || null
+
   const { data, error } = await supabase
     .from('bookings')
-    .insert([bookingData])
+    .insert([{
+      property_id: bookingData.property_id,
+      first_name: bookingData.first_name.trim(),
+      last_name: bookingData.last_name.trim(),
+      phone: bookingData.phone.trim(),
+      room_number: roomNumber,
+      service_id: bookingData.service_id,
+      collection_date: bookingData.collection_date,
+      departure_date: bookingData.departure_date,
+      additional_details: bookingData.additional_details?.trim() || null,
+      status: 'pending',
+      stage: 'to_weigh',
+    }])
     .select()
     .single()
   
