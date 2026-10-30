@@ -1,6 +1,7 @@
 'use client'
 
 import { useAuth } from '@/contexts/auth-context'
+import { isKioskUser } from '@/lib/auth/roles'
 import { Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
@@ -13,13 +14,20 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, loading } = useAuth()
   const router = useRouter()
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login')
-    }
-  }, [user, loading, router])
+  const kioskUser = isKioskUser(user)
 
-  if (loading) {
+  useEffect(() => {
+    if (loading) return
+    if (!user) {
+      router.push('/login')
+      return
+    }
+    if (kioskUser) {
+      router.replace('/kiosk')
+    }
+  }, [user, kioskUser, loading, router])
+
+  if (loading || kioskUser) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
         <div className="text-center">

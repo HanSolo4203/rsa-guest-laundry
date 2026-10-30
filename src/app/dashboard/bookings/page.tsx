@@ -1,13 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Filter, Plus, Settings, CreditCard, Banknote, Calendar } from 'lucide-react'
-import { getBookings } from '@/lib/supabase/services'
+import { acknowledgeReadyBookings, getBookings } from '@/lib/supabase/services'
 import { BookingWithService } from '@/lib/types/database'
 import { BookingStatusDialog } from '@/components/booking-status-dialog'
 import { CustomerDetailsDialog } from '@/components/customer-details-dialog'
@@ -15,6 +16,51 @@ import { formatPrice } from '@/lib/pricing'
 import { useSearch } from '@/contexts/search-context'
 import { createClient } from '@/lib/supabase/client'
 
+
+const stageLabels: Record<string, string> = {
+  to_weigh: 'To weigh',
+  washing: 'Washing',
+  drying: 'Drying',
+  finishing: 'Finishing',
+  ready: 'Ready for delivery',
+}
+
+const stageTimes: { key: 'weighed_at' | 'washing_at' | 'drying_at' | 'finishing_at' | 'ready_at'; label: string }[] = [
+  { key: 'weighed_at', label: 'Weighed' },
+  { key: 'washing_at', label: 'Washing' },
+  { key: 'drying_at', label: 'Drying' },
+  { key: 'finishing_at', label: 'Finishing' },
+  { key: 'ready_at', label: 'Ready' },
+]
+
+function formatStageStamp(value: string) {
+  return new Date(value).toLocaleString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+function StageTimes({ booking }: { booking: BookingWithService }) {
+  const stamps = stageTimes.flatMap(({ key, label }) => {
+    const value = booking[key]
+    if (!value) return []
+    return [{ key, text: `${label} ${formatStageStamp(value)}` }]
+  })
+
+  if (stamps.length === 0) {
+    return <span className="text-sm text-gray-500">—</span>
+  }
+
+  return (
+    <div className="space-y-0.5 text-xs text-gray-300">
+      {stamps.map((stamp) => (
+        <div key={stamp.key}>{stamp.text}</div>
+      ))}
+    </div>
+  )
+}
 
 const statusColors = {
   pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
@@ -47,16 +93,32 @@ const renderPaymentMethod = (paymentMethod: string | null | undefined) => {
 }
 
 export default function BookingsPage() {
+  return (
+    <Suspense fallback={null}>
+      <BookingsPageContent />
+    </Suspense>
+  )
+}
+
+function BookingsPageContent() {
   const [bookings, setBookings] = useState<BookingWithService[]>([])
   const [loading, setLoading] = useState(true)
   const [statusDialogOpen, setStatusDialogOpen] = useState(false)
   const [selectedBooking, setSelectedBooking] = useState<BookingWithService | null>(null)
   const [customerDetailsOpen, setCustomerDetailsOpen] = useState(false)
   const [selectedCustomerBooking, setSelectedCustomerBooking] = useState<BookingWithService | null>(null)
+  const [statusFilter, setStatusFilter] = useState('all')
+  const searchParams = useSearchParams()
   const { searchQuery } = useSearch()
 
-  // Filter bookings by search query (customer name or phone)
+  // Filter bookings by status, the ready-for-delivery stage, and search query
   const filteredBookings = bookings.filter(booking => {
+    if (statusFilter === 'ready') {
+      if (booking.stage !== 'ready') return false
+    } else if (statusFilter !== 'all' && booking.status !== statusFilter) {
+      return false
+    }
+
     if (!searchQuery.trim()) return true
     
     const fullName = `${booking.first_name} ${booking.last_name}`.toLowerCase()
@@ -80,7 +142,14 @@ export default function BookingsPage() {
 
   useEffect(() => {
     fetchBookings()
+    acknowledgeReadyBookings().catch((error) => {
+      console.error('Error acknowledging ready bookings:', error)
+    })
   }, [])
+
+  useEffect(() => {
+    if (searchParams.get('delivery') === 'ready') setStatusFilter('ready')
+  }, [searchParams])
 
   // Supabase Realtime subscription for database changes
   useEffect(() => {
@@ -104,6 +173,11 @@ export default function BookingsPage() {
             // New booking added
             await fetchBookings()
           } else if (payload.eventType === 'UPDATE') {
+            if (payload.new.stage === 'ready' && payload.new.ready_acknowledged_at == null) {
+              acknowledgeReadyBookings().catch((error) => {
+                console.error('Error acknowledging ready booking:', error)
+              })
+            }
             // Booking updated - update the specific record immediately
             const updatedBookingId = payload.new.id
             
@@ -211,13 +285,14 @@ export default function BookingsPage() {
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <label className="text-sm font-medium text-gray-300 mb-2 block">Status Filter</label>
-              <Select>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-full bg-gray-700 border-gray-600 text-white hover:bg-gray-600 focus:ring-2 focus:ring-purple-500">
                   <Filter className="mr-2 h-4 w-4 text-purple-400" />
                   <SelectValue placeholder="All Status" />
                 </SelectTrigger>
                 <SelectContent className="bg-gray-800 border-gray-700 text-white">
                   <SelectItem value="all" className="hover:bg-gray-700">All Status</SelectItem>
+                  <SelectItem value="ready" className="hover:bg-gray-700">Ready for delivery</SelectItem>
                   <SelectItem value="pending" className="hover:bg-gray-700">Pending</SelectItem>
                   <SelectItem value="confirmed" className="hover:bg-gray-700">Confirmed</SelectItem>
                   <SelectItem value="collected" className="hover:bg-gray-700">Collected</SelectItem>
@@ -268,7 +343,10 @@ export default function BookingsPage() {
                   <TableHead className="whitespace-nowrap hidden md:table-cell text-gray-200 font-semibold">Collection</TableHead>
                   <TableHead className="whitespace-nowrap hidden lg:table-cell text-gray-200 font-semibold">Departure</TableHead>
                   <TableHead className="whitespace-nowrap text-gray-200 font-semibold">Status</TableHead>
+                  <TableHead className="whitespace-nowrap hidden md:table-cell text-gray-200 font-semibold">Machine</TableHead>
                   <TableHead className="whitespace-nowrap hidden sm:table-cell text-gray-200 font-semibold">Weight</TableHead>
+                  <TableHead className="whitespace-nowrap hidden lg:table-cell text-gray-200 font-semibold">Weighed by</TableHead>
+                  <TableHead className="whitespace-nowrap hidden xl:table-cell text-gray-200 font-semibold">Stage times</TableHead>
                   <TableHead className="whitespace-nowrap text-gray-200 font-semibold">Price</TableHead>
                   <TableHead className="whitespace-nowrap hidden xl:table-cell text-gray-200 font-semibold">Payment</TableHead>
                   <TableHead className="text-right whitespace-nowrap text-gray-200 font-semibold">Actions</TableHead>
@@ -277,7 +355,7 @@ export default function BookingsPage() {
               <TableBody>
                 {loading ? (
                   <TableRow className="hover:bg-gray-800/50">
-                    <TableCell colSpan={9} className="text-center py-12 text-gray-300">
+                    <TableCell colSpan={12} className="text-center py-12 text-gray-300">
                       <div className="flex flex-col items-center gap-3">
                         <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
                         <span className="text-lg">Loading bookings...</span>
@@ -286,13 +364,15 @@ export default function BookingsPage() {
                   </TableRow>
                 ) : filteredBookings.length === 0 ? (
                   <TableRow className="hover:bg-gray-800/50">
-                    <TableCell colSpan={9} className="text-center py-12 text-gray-300">
+                    <TableCell colSpan={12} className="text-center py-12 text-gray-300">
                       <div className="flex flex-col items-center gap-3">
                         <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center">
                           <Calendar className="h-8 w-8 text-gray-400" />
                         </div>
                         <span className="text-lg">
-                          {searchQuery ? 'No bookings found matching your search' : 'No bookings found'}
+                          {searchQuery || statusFilter !== 'all'
+                            ? 'No bookings found matching your filters'
+                            : 'No bookings found'}
                         </span>
                       </div>
                     </TableCell>
@@ -306,6 +386,15 @@ export default function BookingsPage() {
                           <span className="text-sm text-gray-400 sm:hidden">{booking.service.name}</span>
                           <span className="text-sm text-gray-400 md:hidden">{new Date(booking.collection_date).toLocaleDateString()}</span>
                           <span className="text-sm text-gray-400 lg:hidden">{new Date(booking.departure_date).toLocaleDateString()}</span>
+                          <span className="text-sm text-gray-400 md:hidden">Machine {booking.machine_number ?? '—'}</span>
+                          <span className="text-sm text-gray-400 sm:hidden">
+                            {booking.weight_kg != null ? `${booking.weight_kg} kg` : '—'}
+                          </span>
+                          <span className="text-sm text-gray-400 lg:hidden">{booking.weigher_name ?? '—'}</span>
+                          <div className="mt-1 xl:hidden">
+                            <div className="text-xs font-medium text-purple-300">{stageLabels[booking.stage] ?? booking.stage}</div>
+                            <StageTimes booking={booking} />
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell className="hidden sm:table-cell text-gray-300">{booking.service.name}</TableCell>
@@ -317,12 +406,32 @@ export default function BookingsPage() {
                           <span className="sm:hidden">{booking.status.charAt(0).toUpperCase()}</span>
                         </Badge>
                       </TableCell>
+                      <TableCell className="hidden md:table-cell text-gray-300">
+                        {booking.machine_number != null ? (
+                          <span className="text-sm font-semibold text-white">{booking.machine_number}</span>
+                        ) : (
+                          <span className="text-sm text-gray-500">—</span>
+                        )}
+                      </TableCell>
                       <TableCell className="hidden sm:table-cell text-gray-300">
-                        {booking.weight_kg ? (
+                        {booking.weight_kg != null ? (
                           <span className="text-sm font-semibold text-orange-300">{booking.weight_kg} kg</span>
                         ) : (
-                          <span className="text-sm text-gray-500">-</span>
+                          <span className="text-sm text-gray-500">—</span>
                         )}
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell text-gray-300">
+                        {booking.weigher_name ? (
+                          <span className="text-sm">{booking.weigher_name}</span>
+                        ) : (
+                          <span className="text-sm text-gray-500">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="hidden xl:table-cell">
+                        <div className="mb-1 text-xs font-medium text-purple-300">
+                          {stageLabels[booking.stage] ?? booking.stage}
+                        </div>
+                        <StageTimes booking={booking} />
                       </TableCell>
                       <TableCell className="text-gray-300">
                         {booking.status === 'pending' ? (

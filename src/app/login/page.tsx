@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useAuth } from '@/contexts/auth-context'
+import { isKioskUser } from '@/lib/auth/roles'
 import { toast } from 'sonner'
 import { Mail, Lock, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -33,11 +34,13 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormData) => {
     try {
       setIsLoading(true)
-      const { error } = await signIn(data.email, data.password)
-      
+      const { error, user } = await signIn(data.email, data.password)
+
       if (error) {
         toast.error(error.message || 'Failed to sign in')
         console.error('Login error:', error)
+      } else if (isKioskUser(user)) {
+        router.push('/kiosk')
       } else {
         toast.success('Successfully signed in!')
         router.push('/dashboard')

@@ -1,58 +1,77 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { User, Session } from '@supabase/supabase-js'
+import { authScopeFromPath } from '@/lib/auth/kiosk-session'
 import { createClient } from '@/lib/supabase/client'
 
 interface AuthContextType {
   user: User | null
   session: Session | null
   loading: boolean
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>
+  signIn: (
+    email: string,
+    password: string
+  ) => Promise<{ error: Error | null; user: User | null }>
   signOut: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
+  const scope = authScopeFromPath(pathname)
+  const supabase = useMemo(() => createClient(scope), [scope])
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
-  const supabase = createClient()
+  const [boundScope, setBoundScope] = useState(scope)
+
+  if (boundScope !== scope) {
+    setBoundScope(scope)
+    setSession(null)
+    setUser(null)
+    setLoading(true)
+  }
 
   useEffect(() => {
-    // Get initial session
-    const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      setSession(session)
-      setUser(session?.user ?? null)
+    let cancelled = false
+
+    const applySession = (next: Session | null) => {
+      if (cancelled) return
+      setSession(next)
+      setUser(next?.user ?? null)
       setLoading(false)
     }
 
-    getInitialSession()
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, next) => {
+      applySession(next)
+    })
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session)
-        setUser(session?.user ?? null)
-        setLoading(false)
-      }
-    )
+    void supabase.auth.getSession().then(({ data: { session: next } }) => {
+      applySession(next)
+    })
 
-    return () => subscription.unsubscribe()
-  }, [supabase.auth])
+    return () => {
+      cancelled = true
+      subscription.unsubscribe()
+    }
+  }, [supabase])
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
-    return { error }
+    return { error, user: data.user }
   }
 
   const signOut = async () => {
-    await supabase.auth.signOut()
+    // Tablet sign-out clears only the kiosk cookie. The dashboard session stays.
+    await supabase.auth.signOut(scope === 'kiosk' ? { scope: 'local' } : undefined)
   }
 
   const value = {

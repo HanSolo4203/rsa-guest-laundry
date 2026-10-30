@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { format } from 'date-fns'
@@ -52,6 +52,7 @@ export function BookingForm({ services }: BookingFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [weight, setWeight] = useState<number | undefined>(undefined)
   const [selectedService, setSelectedService] = useState<string>('')
+  const [calculatedPrice, setCalculatedPrice] = useState(0)
   
   // Set default dates
   const today = new Date()
@@ -71,8 +72,24 @@ export function BookingForm({ services }: BookingFormProps) {
     },
   })
 
-  // Calculate price when weight or service changes
-  const calculatedPrice = weight && selectedService ? calculatePrice(selectedService, weight) : 0
+  useEffect(() => {
+    let cancelled = false
+
+    async function updatePrice() {
+      if (!weight || !selectedService) {
+        setCalculatedPrice(0)
+        return
+      }
+
+      const price = await calculatePrice(selectedService, weight)
+      if (!cancelled) setCalculatedPrice(price)
+    }
+
+    void updatePrice()
+    return () => {
+      cancelled = true
+    }
+  }, [weight, selectedService])
 
   const onSubmit = async (data: BookingFormData) => {
     setIsSubmitting(true)

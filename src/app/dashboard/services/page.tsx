@@ -34,8 +34,9 @@ import { getServices, createService, updateService, deleteService } from '@/lib/
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Edit, Trash2, Package } from 'lucide-react'
+import { Plus, Edit, Trash2, Package, Tags } from 'lucide-react'
 import { toast } from 'sonner'
+import { ServicePricingDialog } from '@/components/service-pricing-dialog'
 
 const serviceSchema = z.object({
   name: z.string()
@@ -65,6 +66,7 @@ export default function ServicesPage() {
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingService, setEditingService] = useState<Service | null>(null)
+  const [pricingService, setPricingService] = useState<Service | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
   const form = useForm<ServiceFormData>({
@@ -302,7 +304,7 @@ export default function ServicesPage() {
                 </TableHeader>
                 <TableBody>
                   {services.map((service) => (
-                    <TableRow key={service.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                    <TableRow key={service.id} className="border-b border-gray-700/80 hover:bg-gray-800 data-[state=selected]:bg-gray-800 selection:bg-violet-700 selection:text-white transition-colors">
                       <TableCell className="font-medium py-4">
                         <div className="flex flex-col">
                           <span className="text-gray-900 dark:text-white font-medium">{service.name}</span>
@@ -322,8 +324,18 @@ export default function ServicesPage() {
                           <Button
                             variant="ghost"
                             size="sm"
+                            onClick={() => setPricingService(service)}
+                            className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 text-emerald-300 hover:text-emerald-200 hover:bg-emerald-900/40 transition-all duration-200"
+                            title="Edit pricing"
+                          >
+                            <Tags className="h-4 w-4" />
+                            <span className="hidden sm:inline ml-1">Edit pricing</span>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => handleEdit(service)}
-                            className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200"
+                            className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 text-blue-300 hover:text-blue-200 hover:bg-blue-900/40 transition-all duration-200"
                             title="Edit service"
                           >
                             <Edit className="h-4 w-4" />
@@ -333,7 +345,7 @@ export default function ServicesPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDelete(service)}
-                            className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200"
+                            className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 text-red-300 hover:text-red-200 hover:bg-red-900/40 transition-all duration-200"
                             title="Delete service"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -349,6 +361,15 @@ export default function ServicesPage() {
           )}
         </CardContent>
       </Card>
+
+      <ServicePricingDialog
+        service={pricingService}
+        open={pricingService !== null}
+        onOpenChange={(open) => {
+          if (!open) setPricingService(null)
+        }}
+        onSaved={fetchServices}
+      />
     </div>
   )
 }

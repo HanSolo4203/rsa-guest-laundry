@@ -41,11 +41,6 @@ const statusUpdateSchema = z.object({
   weight_kg: z.number().min(0.1, 'Weight must be greater than 0').optional(),
 })
 
-// Function to calculate price based on weight and service name using the new pricing structure
-const calculatePriceFromWeight = (weightKg: number, serviceName: string): number => {
-  return calculatePrice(serviceName, weightKg)
-}
-
 type StatusUpdateFormData = z.infer<typeof statusUpdateSchema>
 
 interface BookingStatusDialogProps {
@@ -63,6 +58,7 @@ const statusOptions = [
 
 export function BookingStatusDialog({ open, onOpenChange, booking, onSuccess }: BookingStatusDialogProps) {
   const [submitting, setSubmitting] = useState(false)
+  const [calculatedPrice, setCalculatedPrice] = useState(0)
 
   const form = useForm<StatusUpdateFormData>({
     resolver: zodResolver(statusUpdateSchema),
@@ -80,9 +76,22 @@ export function BookingStatusDialog({ open, onOpenChange, booking, onSuccess }: 
 
   // Auto-calculate price when weight is entered for processing status
   useEffect(() => {
-    if (selectedStatus === 'processing' && selectedWeight && selectedWeight > 0 && booking) {
-      const calculatedPrice = calculatePriceFromWeight(selectedWeight, booking.service.name)
-      form.setValue('total_price', calculatedPrice)
+    let cancelled = false
+
+    async function updatePrice() {
+      if (!(selectedStatus === 'processing' && selectedWeight && selectedWeight > 0 && booking)) {
+        return
+      }
+
+      const price = await calculatePrice(booking.service.name, selectedWeight)
+      if (cancelled) return
+      setCalculatedPrice(price)
+      form.setValue('total_price', price)
+    }
+
+    void updatePrice()
+    return () => {
+      cancelled = true
     }
   }, [selectedStatus, selectedWeight, booking, form])
 
@@ -106,7 +115,7 @@ export function BookingStatusDialog({ open, onOpenChange, booking, onSuccess }: 
       // Calculate price if status is processing and weight is provided
       let finalPrice = data.total_price
       if (data.status === 'processing' && data.weight_kg && data.weight_kg > 0) {
-        finalPrice = calculatePriceFromWeight(data.weight_kg, booking.service.name)
+        finalPrice = await calculatePrice(booking.service.name, data.weight_kg)
       }
       
       await updateBookingStatus(
@@ -235,10 +244,10 @@ export function BookingStatusDialog({ open, onOpenChange, booking, onSuccess }: 
                         <p className="text-sm text-gray-300">
                           Enter the weight of the laundry in kilograms
                         </p>
-                        {selectedWeight && selectedWeight > 0 && booking && (
+                        {selectedWeight && selectedWeight > 0 && booking && calculatedPrice > 0 && (
                           <div className="mt-4 p-4 bg-green-900/30 border border-green-500/50 rounded-lg">
                             <p className="text-green-300 font-semibold text-lg">
-                              <strong>Calculated Price:</strong> {formatPrice(calculatePriceFromWeight(selectedWeight, booking.service.name))}
+                              <strong>Calculated Price:</strong> {formatPrice(calculatedPrice)}
                             </p>
                             <p className="text-green-200/80 text-sm mt-2">
                               Based on {selectedWeight}kg and service: {booking.service.name}

@@ -92,6 +92,7 @@ export function useHomePage(): UseHomePageReturn {
   const [isSubmittingBooking, setIsSubmittingBooking] = useState(false)
   const [weight, setWeight] = useState<number | undefined>(undefined)
   const [selectedService, setSelectedService] = useState<string>('')
+  const [calculatedPrice, setCalculatedPrice] = useState(0)
   
   // Set default dates for form
   const today = new Date()
@@ -134,8 +135,24 @@ export function useHomePage(): UseHomePageReturn {
   const [expandedBookings, setExpandedBookings] = useState<Set<string>>(new Set())
   const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set([format(new Date(), 'yyyy-MM-dd')]))
   
-  // Calculate price when weight or service changes
-  const calculatedPrice = weight && selectedService ? calculatePrice(selectedService, weight) : 0
+  useEffect(() => {
+    let cancelled = false
+
+    async function updatePrice() {
+      if (!weight || !selectedService) {
+        setCalculatedPrice(0)
+        return
+      }
+
+      const price = await calculatePrice(selectedService, weight)
+      if (!cancelled) setCalculatedPrice(price)
+    }
+
+    void updatePrice()
+    return () => {
+      cancelled = true
+    }
+  }, [weight, selectedService])
   
   // Fetch services
   const fetchServices = useCallback(async () => {

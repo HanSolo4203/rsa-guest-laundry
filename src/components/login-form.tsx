@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/contexts/auth-context'
+import { isKioskUser } from '@/lib/auth/roles'
 import { Loader2, Lock, Mail } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
@@ -43,11 +44,13 @@ export function LoginForm() {
   const onSubmit = async (data: LoginFormData) => {
     try {
       setIsLoading(true)
-      const { error } = await signIn(data.email, data.password)
-      
+      const { error, user } = await signIn(data.email, data.password)
+
       if (error) {
         toast.error(error.message || 'Failed to sign in')
         console.error('Login error:', error)
+      } else if (isKioskUser(user)) {
+        router.push('/kiosk')
       } else {
         toast.success('Successfully signed in!')
         router.push('/dashboard')

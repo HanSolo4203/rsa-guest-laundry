@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { useReadyDeliveryNotifications } from '@/hooks/use-ready-delivery-notifications'
 import {
   Calendar,
   Settings,
@@ -69,6 +70,7 @@ export default function DashboardLayout({
   const pathname = usePathname()
   const router = useRouter()
   const { signOut } = useAuth()
+  const readyCount = useReadyDeliveryNotifications()
 
   const handleSignOut = async () => {
     try {
@@ -109,10 +111,13 @@ export default function DashboardLayout({
                 <ul className="space-y-2">
                   {navigation.map((item) => {
                     const isActive = pathname === item.href
+                    const href = item.name === 'Bookings' && readyCount > 0
+                      ? '/dashboard/bookings?delivery=ready'
+                      : item.href
                     return (
                       <li key={item.name}>
                         <Link
-                          href={item.href}
+                          href={href}
                           className={cn(
                             "flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-colors relative",
                             isActive
@@ -126,6 +131,11 @@ export default function DashboardLayout({
                           )}
                           <item.icon className="mr-3 h-5 w-5" />
                           {item.name}
+                          {item.name === 'Bookings' && readyCount > 0 && (
+                            <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 text-[11px] font-semibold text-white">
+                              {readyCount > 99 ? '99+' : readyCount}
+                            </span>
+                          )}
                         </Link>
                       </li>
                     )
@@ -145,22 +155,33 @@ export default function DashboardLayout({
                 <ul className="flex flex-1 flex-col gap-y-2">
                   {navigation.map((item) => {
                     const isActive = pathname === item.href
+                    const href = item.name === 'Bookings' && readyCount > 0
+                      ? '/dashboard/bookings?delivery=ready'
+                      : item.href
+                    const title = item.name === 'Bookings' && readyCount > 0
+                      ? `Bookings, ${readyCount} ready for delivery`
+                      : item.name
                     return (
                       <li key={item.name}>
                         <Link
-                          href={item.href}
+                          href={href}
                           className={cn(
                             "flex items-center justify-center px-3 py-3 text-sm font-medium rounded-lg transition-colors relative group",
                             isActive
                               ? "bg-purple-900/30 text-white"
                               : "text-gray-400 hover:bg-gray-700 hover:text-white"
                           )}
-                          title={item.name}
+                          title={title}
                         >
                           {isActive && (
                             <div className="absolute left-0 top-0 bottom-0 w-1 bg-white rounded-r"></div>
                           )}
                           <item.icon className="h-5 w-5" />
+                          {item.name === 'Bookings' && readyCount > 0 && (
+                            <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-semibold leading-none text-white">
+                              {readyCount > 99 ? '99+' : readyCount}
+                            </span>
+                          )}
                         </Link>
                       </li>
                     )

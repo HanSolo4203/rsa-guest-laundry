@@ -22,6 +22,11 @@ import {
 import { getBookings } from '@/lib/supabase/services'
 import { BookingWithService } from '@/lib/types/database'
 
+interface TurnaroundStat {
+  averageMs: number
+  sampleCount: number
+}
+
 interface MonthlyStats {
   totalIncome: number
   totalBookings: number
@@ -32,6 +37,24 @@ interface MonthlyStats {
   serviceTypeStats: { [key: string]: { count: number; revenue: number } }
   statusBreakdown: { [key: string]: number }
   dailyRevenue: { [key: string]: number }
+  serviceTurnaround: { [key: string]: TurnaroundStat }
+  overallTurnaroundMs: number | null
+  overallTurnaroundCount: number
+}
+
+function washToReadyMs(booking: BookingWithService): number | null {
+  if (!booking.weighed_at || !booking.ready_at) return null
+  const duration = new Date(booking.ready_at).getTime() - new Date(booking.weighed_at).getTime()
+  return duration >= 0 ? duration : null
+}
+
+function formatDuration(ms: number): string {
+  const totalMinutes = Math.round(ms / 60000)
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+  if (hours === 0) return `${minutes} min`
+  if (minutes === 0) return `${hours}h`
+  return `${hours}h ${minutes}m`
 }
 
 export default function AnalyticsPage() {
@@ -56,7 +79,10 @@ export default function AnalyticsPage() {
     averageOrderValue: 0,
     serviceTypeStats: {},
     statusBreakdown: {},
-    dailyRevenue: {}
+    dailyRevenue: {},
+    serviceTurnaround: {},
+    overallTurnaroundMs: null,
+    overallTurnaroundCount: 0
   })
   const [expandedService, setExpandedService] = useState<string | null>(null)
 
@@ -217,6 +243,31 @@ export default function AnalyticsPage() {
       dailyRevenue[day] = (dailyRevenue[day] || 0) + revenue
     })
 
+    const serviceTurnaround: { [key: string]: TurnaroundStat } = {}
+    const turnaroundTotals: { [key: string]: { totalMs: number; sampleCount: number } } = {}
+    let overallTotalMs = 0
+    let overallTurnaroundCount = 0
+
+    monthlyBookings.forEach(booking => {
+      const duration = washToReadyMs(booking)
+      if (duration == null) return
+      const serviceName = booking.service.name
+      if (!turnaroundTotals[serviceName]) {
+        turnaroundTotals[serviceName] = { totalMs: 0, sampleCount: 0 }
+      }
+      turnaroundTotals[serviceName].totalMs += duration
+      turnaroundTotals[serviceName].sampleCount += 1
+      overallTotalMs += duration
+      overallTurnaroundCount += 1
+    })
+
+    Object.entries(turnaroundTotals).forEach(([serviceName, totals]) => {
+      serviceTurnaround[serviceName] = {
+        averageMs: totals.totalMs / totals.sampleCount,
+        sampleCount: totals.sampleCount,
+      }
+    })
+
     return {
       totalIncome,
       totalBookings,
@@ -226,7 +277,10 @@ export default function AnalyticsPage() {
       averageOrderValue,
       serviceTypeStats,
       statusBreakdown,
-      dailyRevenue
+      dailyRevenue,
+      serviceTurnaround,
+      overallTurnaroundMs: overallTurnaroundCount > 0 ? overallTotalMs / overallTurnaroundCount : null,
+      overallTurnaroundCount
     }
   }
 
@@ -435,6 +489,49 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Weighed to ready */}
+      <Card className="bg-gray-800 border-gray-700">
+        <CardHeader>
+          <CardTitle className="text-white flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Weighed to ready
+          </CardTitle>
+          <CardDescription className="text-gray-400">
+            Average time from weigh-in to ready for delivery, by service
+            {monthlyStats.overallTurnaroundMs != null && (
+              <span className="block mt-1 text-white">
+                Overall {formatDuration(monthlyStats.overallTurnaroundMs)} across {monthlyStats.overallTurnaroundCount} booking{monthlyStats.overallTurnaroundCount === 1 ? '' : 's'}
+              </span>
+            )}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {Object.keys(monthlyStats.serviceTurnaround).length > 0 ? (
+            <div className="space-y-3">
+              {Object.entries(monthlyStats.serviceTurnaround)
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([serviceName, stats]) => (
+                  <div key={serviceName} className="flex items-center justify-between rounded-lg bg-gray-700/50 p-4">
+                    <div>
+                      <div className="font-medium text-white">{serviceName}</div>
+                      <div className="text-sm text-gray-400">
+                        {stats.sampleCount} booking{stats.sampleCount === 1 ? '' : 's'}
+                      </div>
+                    </div>
+                    <div className="text-lg font-semibold text-purple-300">
+                      {formatDuration(stats.averageMs)}
+                    </div>
+                  </div>
+                ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-400">
+              No weighed-to-ready times for {selectedMonthLabel}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Service Type Performance */}
       <Card className="bg-gray-800 border-gray-700">
