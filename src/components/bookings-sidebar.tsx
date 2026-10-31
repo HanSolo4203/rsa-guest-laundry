@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { PaymentStatusBadge } from '@/components/payments/payment-status-badge'
 import { getBookings, updateBookingPaymentMethod, updateBooking, getServices } from '@/lib/supabase/services'
 import { BookingWithService, Service } from '@/lib/types/database'
 import { format } from 'date-fns'
@@ -121,7 +122,7 @@ export function BookingsSidebar({ visible = false, onToggle }: BookingsSidebarPr
     setEditFormData({
       first_name: booking.first_name,
       last_name: booking.last_name,
-      phone: booking.phone,
+      phone: booking.phone ?? '',
       service_id: booking.service_id,
       collection_date: booking.collection_date,
       departure_date: booking.departure_date,
@@ -518,6 +519,7 @@ export function BookingsSidebar({ visible = false, onToggle }: BookingsSidebarPr
                                     <span className="text-white font-medium">
                                       {booking.first_name} {booking.last_name}
                                     </span>
+                                    <PaymentStatusBadge status={booking.payment_status} />
                                   </div>
                                   <span className="text-green-400 font-medium">
                                     R{booking.total_price || booking.service.price}
@@ -543,6 +545,7 @@ export function BookingsSidebar({ visible = false, onToggle }: BookingsSidebarPr
                                     <span className="text-white font-medium">
                                       {booking.first_name} {booking.last_name}
                                     </span>
+                                    <PaymentStatusBadge status={booking.payment_status} />
                                   </div>
                                   <div className="flex items-center gap-2">
                                     {/* Edit Button for Pending Bookings */}
@@ -572,7 +575,7 @@ export function BookingsSidebar({ visible = false, onToggle }: BookingsSidebarPr
                                 {/* Phone */}
                                 <div className="flex items-center gap-2">
                                   <Phone className="h-4 w-4 text-white/70" />
-                                  <span className="text-white/80 text-sm">{booking.phone}</span>
+                                  <span className="text-white/80 text-sm">{booking.phone?.trim() || '—'}</span>
                                 </div>
 
                                 {/* Service */}

@@ -15,6 +15,8 @@ import { BookingWithService } from '@/lib/types/database'
 import { useSearch } from '@/contexts/search-context'
 import { DashboardSearch } from '@/components/dashboard-search'
 import { PropertyFilter, usePropertyOptions } from '@/components/dashboard/property-filter'
+import { FrontDeskBadge } from '@/components/front-desk-badge'
+import { PaymentStatusBadge } from '@/components/payments/payment-status-badge'
 import { BookingPropertyMeta } from '@/components/property-badge'
 import { DeliveryActions, type DeliveryPatch } from '@/components/dashboard/delivery-actions'
 import { createClient } from '@/lib/supabase/client'
@@ -89,7 +91,7 @@ export default function DashboardPage() {
     if (!searchQuery.trim()) return true
     
     const fullName = `${booking.first_name} ${booking.last_name}`.toLowerCase()
-    const phone = booking.phone.toLowerCase()
+    const phone = booking.phone?.toLowerCase() ?? ''
     const query = searchQuery.toLowerCase()
     
     return fullName.includes(query) || phone.includes(query)
@@ -601,8 +603,10 @@ export default function DashboardPage() {
                         >
                           <TableCell className="font-medium text-white">
                             <div className="flex flex-col">
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <span>{booking.first_name} {booking.last_name}</span>
+                                <FrontDeskBadge source={booking.source} tone="dark" />
+                                <PaymentStatusBadge status={booking.payment_status} />
                                 {isCompletedAndPaid && (
                                   <Badge className="bg-green-600 text-white text-xs px-1 py-0">
                                     ✓ Paid
@@ -615,11 +619,11 @@ export default function DashboardPage() {
                                 roomNumber={booking.room_number}
                               />
                               <span className="text-xs text-orange-300 sm:hidden">{booking.service.name}</span>
-                              <span className="text-xs text-orange-300 md:hidden">{booking.phone}</span>
+                              <span className="text-xs text-orange-300 md:hidden">{booking.phone?.trim() || '—'}</span>
                             </div>
                           </TableCell>
                           <TableCell className="hidden sm:table-cell text-gray-300">{booking.service.name}</TableCell>
-                          <TableCell className="hidden md:table-cell text-gray-300">{booking.phone}</TableCell>
+                          <TableCell className="hidden md:table-cell text-gray-300">{booking.phone?.trim() || '—'}</TableCell>
                           <TableCell>
                             <Badge className={statusColors[booking.status as keyof typeof statusColors]}>
                               <StatusIcon className="mr-1 h-3 w-3" />
@@ -752,8 +756,10 @@ export default function DashboardPage() {
                       <TableRow key={booking.id} className={`hover:bg-gray-700/50 ${isToday ? "bg-orange-900/10" : ""}`}>
                         <TableCell className="font-medium text-white">
                           <div className="flex flex-col">
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               <span>{booking.first_name} {booking.last_name}</span>
+                              <FrontDeskBadge source={booking.source} tone="dark" />
+                              <PaymentStatusBadge status={booking.payment_status} />
                               {isToday && (
                                 <Badge variant="outline" className="text-orange-400 border-orange-500 text-xs">
                                   Today

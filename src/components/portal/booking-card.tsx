@@ -1,3 +1,5 @@
+import { FrontDeskBadge } from '@/components/front-desk-badge'
+import { PaymentStatusBadge } from '@/components/payments/payment-status-badge'
 import { StageStepper } from '@/components/portal/stage-stepper'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -57,6 +59,8 @@ export function BookingCard({
                   <span className="truncate">Room {room}</span>
                 </Badge>
               ) : null}
+              <FrontDeskBadge source={booking.source} />
+              <PaymentStatusBadge status={booking.payment_status} />
               {created ? (
                 <time dateTime={booking.created_at} className="text-xs tabular-nums text-slate-500">
                   {created}

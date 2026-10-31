@@ -1,5 +1,6 @@
 import { createBrowserClient } from '@supabase/ssr'
 import { createClient as createSupabaseClient, type Session, type SupabaseClient } from '@supabase/supabase-js'
+import { stashInviteFromUrl } from '@/lib/auth/invite-session'
 import {
   authScopeFromPath,
   kioskCookieMigration,
@@ -96,6 +97,7 @@ export function createClient(scope?: AuthScope) {
     )
   }
 
+  stashInviteFromUrl()
   migrateLegacyKioskCookie()
   migrateLegacyPortalCookie()
 

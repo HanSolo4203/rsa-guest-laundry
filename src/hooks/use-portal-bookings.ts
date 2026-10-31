@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 import { toast } from 'sonner'
 import { playKioskChime } from '@/lib/kiosk/chime'
@@ -194,7 +194,18 @@ export function usePortalBookings(propertyId: string | null, watchingReady: bool
       try {
         const rows = await fetchBookings(propertyId)
         if (cancelled) return
-        setSnapshot({ propertyId, bookings: rows })
+        setSnapshot((current) => {
+          const known = new Set(rows.map((booking) => booking.id))
+          const recent =
+            current.propertyId === propertyId
+              ? current.bookings.filter((booking) => {
+                  if (known.has(booking.id) || booking.status === 'cancelled') return false
+                  const created = new Date(booking.created_at).getTime()
+                  return Number.isFinite(created) && Date.now() - created < 20_000
+                })
+              : []
+          return { propertyId, bookings: [...recent, ...rows] }
+        })
         setError(null)
       } catch (loadError) {
         console.error(loadError)
@@ -335,11 +346,41 @@ export function usePortalBookings(propertyId: string | null, watchingReady: bool
     }
   }, [propertyId, attempt])
 
+  const prependBooking = useCallback(
+    (booking: PortalBooking) => {
+      if (!propertyId) return
+      setSnapshot((current) => {
+        const base = current.propertyId === propertyId ? current.bookings : []
+        if (base.some((row) => row.id === booking.id)) return { propertyId, bookings: base }
+        return { propertyId, bookings: [booking, ...base] }
+      })
+    },
+    [propertyId]
+  )
+
+  const markCancelled = useCallback(
+    (bookingId: string) => {
+      if (!propertyId) return
+      setSnapshot((current) => {
+        if (current.propertyId !== propertyId) return current
+        return {
+          propertyId,
+          bookings: current.bookings.map((booking) =>
+            booking.id === bookingId ? { ...booking, status: 'cancelled' } : booking
+          ),
+        }
+      })
+    },
+    [propertyId]
+  )
+
   return {
     bookings,
     loading,
     error,
     unread,
+    prependBooking,
+    markCancelled,
     retry: () => {
       setError(null)
       setSnapshot({ propertyId: null, bookings: [] })

@@ -1,6 +1,6 @@
 import { parseHex, readableTextColor } from '@/lib/contrast'
 import { formatPrice } from '@/lib/pricing'
-import type { BookingStage, PortalBooking, PortalProperty } from '@/lib/types/database'
+import type { BookingSource, BookingStage, PortalBooking, PortalProperty } from '@/lib/types/database'
 
 export const HISTORY_MS = 30 * 24 * 60 * 60 * 1000
 export const PORTAL_TITLE = 'Laundry Portal'
@@ -107,7 +107,7 @@ export function parsePortalBooking(value: unknown): PortalBooking | null {
     property_id: row.property_id,
     first_name: text(row.first_name)?.trim() ?? '',
     last_name: text(row.last_name)?.trim() ?? '',
-    phone: text(row.phone)?.trim() ?? '',
+    phone: text(row.phone)?.trim() || null,
     room_number: text(row.room_number)?.trim() || null,
     service_id: text(row.service_id) ?? '',
     service_name: text(row.service_name)?.trim() || 'Service',
@@ -131,7 +131,58 @@ export function parsePortalBooking(value: unknown): PortalBooking | null {
     out_for_delivery_at: text(row.out_for_delivery_at),
     delivered_at: text(row.delivered_at),
     received_at: text(row.received_at),
+    source: bookingSource(row.source),
+    created_by: text(row.created_by),
+    payment_status: paymentStatus(row.payment_status),
   }
+}
+
+function paymentStatus(value: unknown): PortalBooking['payment_status'] {
+  if (
+    value === 'unpaid' ||
+    value === 'pending' ||
+    value === 'paid' ||
+    value === 'topup_due' ||
+    value === 'pay_on_delivery'
+  ) {
+    return value
+  }
+  return 'pay_on_delivery'
+}
+
+function bookingSource(value: unknown): BookingSource {
+  if (value === 'portal' || value === 'admin' || value === 'guest') return value
+  return 'guest'
+}
+
+export function canCancelPortalBooking(
+  booking: Pick<PortalBooking, 'stage' | 'status' | 'weighed_at'>
+): boolean {
+  if (booking.status === 'cancelled' || booking.status === 'delivered' || booking.status === 'completed') {
+    return false
+  }
+  return booking.stage === 'to_weigh' && !booking.weighed_at
+}
+
+export function isOpenPortalBooking(
+  booking: Pick<PortalBooking, 'status' | 'delivered_at' | 'received_at'>
+): boolean {
+  if (booking.status === 'cancelled' || booking.status === 'delivered' || booking.status === 'completed') {
+    return false
+  }
+  if (booking.delivered_at || booking.received_at) return false
+  return true
+}
+
+export function openBookingForRoom(bookings: PortalBooking[], room: string): PortalBooking | null {
+  const needle = room.trim().toLowerCase()
+  if (!needle) return null
+  return (
+    bookings.find((booking) => {
+      const current = booking.room_number?.trim().toLowerCase() ?? ''
+      return current === needle && isOpenPortalBooking(booking)
+    }) ?? null
+  )
 }
 
 export function guestName(booking: Pick<PortalBooking, 'first_name' | 'last_name'>): string {

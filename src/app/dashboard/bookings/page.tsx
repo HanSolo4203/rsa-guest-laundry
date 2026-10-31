@@ -9,12 +9,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Filter, Plus, Settings, CreditCard, Banknote, Calendar } from 'lucide-react'
 import { acknowledgeReadyBookings, getBookings } from '@/lib/supabase/services'
-import { BookingWithService } from '@/lib/types/database'
+import { BookingSource, BookingWithService } from '@/lib/types/database'
 import { BookingStatusDialog } from '@/components/booking-status-dialog'
 import { CustomerDetailsDialog } from '@/components/customer-details-dialog'
 import { formatPrice } from '@/lib/pricing'
 import { useSearch } from '@/contexts/search-context'
 import { PropertyFilter, usePropertyOptions } from '@/components/dashboard/property-filter'
+import { FrontDeskBadge } from '@/components/front-desk-badge'
+import { PaymentStatusBadge } from '@/components/payments/payment-status-badge'
 import { BookingPropertyMeta } from '@/components/property-badge'
 import { DeliveryActions, type DeliveryPatch } from '@/components/dashboard/delivery-actions'
 import { createClient } from '@/lib/supabase/client'
@@ -115,15 +117,18 @@ function BookingsPageContent() {
   const [customerDetailsOpen, setCustomerDetailsOpen] = useState(false)
   const [selectedCustomerBooking, setSelectedCustomerBooking] = useState<BookingWithService | null>(null)
   const [statusFilter, setStatusFilter] = useState('all')
+  const [sourceFilter, setSourceFilter] = useState<'all' | BookingSource>('all')
   const [propertyFilter, setPropertyFilter] = useState('all')
   const properties = usePropertyOptions()
   const searchParams = useSearchParams()
   const { searchQuery } = useSearch()
-  const filtersActive = Boolean(searchQuery.trim()) || statusFilter !== 'all' || propertyFilter !== 'all'
+  const filtersActive =
+    Boolean(searchQuery.trim()) || statusFilter !== 'all' || propertyFilter !== 'all' || sourceFilter !== 'all'
 
   // Filter bookings by property, status, the ready-for-delivery stage, and search query
   const filteredBookings = bookings.filter(booking => {
     if (propertyFilter !== 'all' && booking.property_id !== propertyFilter) return false
+    if (sourceFilter !== 'all' && (booking.source ?? 'guest') !== sourceFilter) return false
     if (statusFilter === 'ready') {
       if (booking.stage !== 'ready') return false
     } else if (statusFilter !== 'all' && booking.status !== statusFilter) {
@@ -133,7 +138,7 @@ function BookingsPageContent() {
     if (!searchQuery.trim()) return true
     
     const fullName = `${booking.first_name} ${booking.last_name}`.toLowerCase()
-    const phone = booking.phone.toLowerCase()
+    const phone = booking.phone?.toLowerCase() ?? ''
     const query = searchQuery.toLowerCase()
     
     return fullName.includes(query) || phone.includes(query)
@@ -294,12 +299,26 @@ function BookingsPageContent() {
             Filters
           </CardTitle>
           <CardDescription className="text-gray-300">
-            Filter bookings by property, status, and service type
+            Filter bookings by property, source, status, and service type
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4">
             <PropertyFilter properties={properties} value={propertyFilter} onValueChange={setPropertyFilter} />
+            <div className="flex-1">
+              <label htmlFor="source-filter" className="text-sm font-medium text-gray-300 mb-2 block">Source</label>
+              <Select value={sourceFilter} onValueChange={(value) => setSourceFilter(value as 'all' | BookingSource)}>
+                <SelectTrigger id="source-filter" className="w-full bg-gray-700 border-gray-600 text-white hover:bg-gray-600 focus:ring-2 focus:ring-purple-500">
+                  <SelectValue placeholder="All sources" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-700 text-white">
+                  <SelectItem value="all" className="hover:bg-gray-700">All sources</SelectItem>
+                  <SelectItem value="guest" className="hover:bg-gray-700">Guest</SelectItem>
+                  <SelectItem value="portal" className="hover:bg-gray-700">Front desk</SelectItem>
+                  <SelectItem value="admin" className="hover:bg-gray-700">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="flex-1">
               <label className="text-sm font-medium text-gray-300 mb-2 block">Status Filter</label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -399,7 +418,11 @@ function BookingsPageContent() {
                     <TableRow key={booking.id} className={`hover:bg-gray-700/30 transition-colors duration-200 ${index % 2 === 0 ? 'bg-gray-800/30' : 'bg-gray-800/10'}`}>
                       <TableCell className="font-medium text-white">
                         <div className="flex flex-col">
-                          <span className="text-base font-semibold">{booking.first_name} {booking.last_name}</span>
+                          <span className="flex flex-wrap items-center gap-2 text-base font-semibold">
+                            {booking.first_name} {booking.last_name}
+                            <FrontDeskBadge source={booking.source} tone="dark" />
+                            <PaymentStatusBadge status={booking.payment_status} />
+                          </span>
                           <BookingPropertyMeta
                             name={booking.property?.name}
                             color={booking.property?.primary_color}

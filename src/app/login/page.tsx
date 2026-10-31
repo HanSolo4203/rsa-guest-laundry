@@ -1,10 +1,12 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { AcceptInvite } from '@/components/auth/accept-invite'
 import { useAuth } from '@/contexts/auth-context'
+import { takeStashedInvite, type StashedInvite } from '@/lib/auth/invite-session'
 import { getRole, pathForRole } from '@/lib/auth/roles'
 import { moveSessionToPortal } from '@/lib/supabase/client'
 import { toast } from 'sonner'
@@ -22,9 +24,16 @@ type LoginFormData = z.infer<typeof loginSchema>
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [noAccess, setNoAccess] = useState(false)
+  const [invite, setInvite] = useState<StashedInvite | null>(null)
+  const [inviteChecked, setInviteChecked] = useState(false)
   const { signIn, signOut } = useAuth()
   const router = useRouter()
   const showedNoAccess = useRef(false)
+
+  useLayoutEffect(() => {
+    setInvite(takeStashedInvite())
+    setInviteChecked(true)
+  }, [])
 
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get('error') !== 'no-access') return
@@ -103,7 +112,22 @@ export default function LoginPage() {
 
           {/* Login Form */}
           <div className="space-y-6">
+            {!inviteChecked ? (
+              <p className="text-center text-sm text-gray-300">Opening your invite…</p>
+            ) : invite?.kind === 'session' ? (
+              <AcceptInvite
+                accessToken={invite.accessToken}
+                refreshToken={invite.refreshToken}
+                propertySlug={invite.propertySlug}
+              />
+            ) : (
+            <>
             <h1 className="text-4xl font-bold text-white mb-8 text-center">Sign In</h1>
+            {invite?.kind === 'error' ? (
+              <p className="mb-6 text-center text-sm text-red-400" role="alert">
+                {invite.message}
+              </p>
+            ) : null}
             {noAccess ? (
               <p className="mb-6 text-center text-sm text-red-400" role="alert">
                 No access
@@ -167,6 +191,8 @@ export default function LoginPage() {
                 {isLoading ? 'SIGNING IN...' : 'SIGN IN'}
               </button>
             </form>
+            </>
+            )}
           </div>
         </div>
       </div>

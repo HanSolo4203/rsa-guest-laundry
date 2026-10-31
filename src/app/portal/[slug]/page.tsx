@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { format } from 'date-fns'
-import { Search, X } from 'lucide-react'
+import { Plus, Search, X } from 'lucide-react'
 import { BookingCard } from '@/components/portal/booking-card'
 import { BookingSheet } from '@/components/portal/booking-sheet'
+import { NewBookingSheet } from '@/components/portal/new-booking-sheet'
 import { usePortalProperty } from '@/components/portal/portal-shell'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
@@ -88,23 +89,49 @@ function ListSkeleton() {
 }
 
 export default function PortalPage() {
-  const { property, loading: propertyLoading } = usePortalProperty()
+  const { property, loading: propertyLoading, setHeaderAction } = usePortalProperty()
   const [tab, setTab] = useState<PortalTab>('active')
   const [query, setQuery] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [creating, setCreating] = useState(false)
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
+  const [cancellingId, setCancellingId] = useState<string | null>(null)
   const now = useNow()
-  const { bookings, loading, error, unread, retry } = usePortalBookings(property?.id ?? null, tab === 'ready')
+  const { bookings, loading, error, unread, retry, prependBooking, markCancelled } = usePortalBookings(
+    property?.id ?? null,
+    tab === 'ready'
+  )
   const counts = portalCounts(bookings, now)
   const selected = bookings.find((booking) => booking.id === selectedId) ?? null
   const showSkeleton = propertyLoading || loading
   const searching = query.trim() !== ''
   const onPrimary = portalOnPrimary(property?.primary_color)
+  const openNewBooking = useCallback(() => setCreating(true), [])
 
   useEffect(() => {
     setSelectedId(null)
     setQuery('')
+    setCreating(false)
   }, [property?.id])
+
+  useEffect(() => {
+    if (!property) {
+      setHeaderAction(null)
+      return
+    }
+    setHeaderAction(
+      <button
+        type="button"
+        onClick={openNewBooking}
+        className="hidden h-10 shrink-0 cursor-pointer items-center gap-1.5 rounded-xl px-3 text-sm font-semibold md:inline-flex"
+        style={{ backgroundColor: 'var(--portal-primary)', color: onPrimary }}
+      >
+        <Plus className="size-4" aria-hidden="true" />
+        New booking
+      </button>
+    )
+    return () => setHeaderAction(null)
+  }, [property, onPrimary, openNewBooking, setHeaderAction])
 
   useEffect(() => {
     if (!selectedId || loading) return
@@ -127,8 +154,26 @@ export default function PortalPage() {
     }
   }
 
+  async function cancelBooking(bookingId: string) {
+    if (cancellingId) return
+    setCancellingId(bookingId)
+    try {
+      const supabase = createClient('portal')
+      const { error } = await supabase.rpc('portal_cancel_booking', { p_booking_id: bookingId })
+      if (error) throw new Error(error.message)
+      markCancelled(bookingId)
+      toast.success('Booking cancelled')
+      setSelectedId(null)
+    } catch (cancelError) {
+      console.error(cancelError)
+      toast.error(cancelError instanceof Error ? cancelError.message : 'Could not cancel booking')
+    } finally {
+      setCancellingId(null)
+    }
+  }
+
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:px-6 md:pt-6">
+    <main className="mx-auto w-full max-w-5xl px-4 pt-4 pb-24 sm:px-6 md:pt-6 md:pb-[max(1.5rem,env(safe-area-inset-bottom))]">
       <p className="text-sm font-medium text-slate-500">{format(now, 'EEEE d MMM')}</p>
       <p className="sr-only" aria-live="polite">
         {counts.inProgress} in progress, {counts.ready} ready, {counts.deliveredToday} delivered today
@@ -277,13 +322,44 @@ export default function PortalPage() {
         primaryColor={property?.primary_color ?? null}
         now={now}
         confirming={selected != null && confirmingId === selected.id}
+        cancelling={selected != null && cancellingId === selected.id}
         onConfirm={() => {
           if (selected) void confirmReceived(selected.id)
+        }}
+        onCancel={() => {
+          if (selected) void cancelBooking(selected.id)
         }}
         onOpenChange={(open) => {
           if (!open) setSelectedId(null)
         }}
       />
+
+      {property ? (
+        <NewBookingSheet
+          open={creating}
+          onOpenChange={setCreating}
+          propertyId={property.id}
+          primaryColor={property.primary_color}
+          bookings={bookings}
+          onCreated={(booking) => {
+            prependBooking(booking)
+            setTab('active')
+            setQuery('')
+          }}
+        />
+      ) : null}
+
+      {property ? (
+        <button
+          type="button"
+          onClick={openNewBooking}
+          className="fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-30 flex size-14 cursor-pointer items-center justify-center rounded-full shadow-lg md:hidden"
+          style={{ backgroundColor: 'var(--portal-primary)', color: onPrimary }}
+          aria-label="New booking"
+        >
+          <Plus className="size-6" aria-hidden="true" />
+        </button>
+      ) : null}
     </main>
   )
 }

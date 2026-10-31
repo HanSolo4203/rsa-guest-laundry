@@ -1,8 +1,21 @@
 'use client'
 
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
+import { FrontDeskBadge } from '@/components/front-desk-badge'
+import { PaymentStatusBadge } from '@/components/payments/payment-status-badge'
 import { StageStepper } from '@/components/portal/stage-stepper'
 import { portalFont } from '@/components/portal/font'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import {
   Sheet,
@@ -12,6 +25,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import {
+  canCancelPortalBooking,
   canConfirmReceived,
   displayPayment,
   displayPrice,
@@ -68,7 +82,9 @@ export function BookingSheet({
   primaryColor,
   now,
   confirming,
+  cancelling,
   onConfirm,
+  onCancel,
   onOpenChange,
 }: {
   booking: PortalBooking | null
@@ -76,7 +92,9 @@ export function BookingSheet({
   primaryColor: string | null
   now: number
   confirming: boolean
+  cancelling: boolean
   onConfirm: () => void
+  onCancel: () => void
   onOpenChange: (open: boolean) => void
 }) {
   const wide = useWideLayout()
@@ -103,7 +121,9 @@ export function BookingSheet({
             now={now}
             wide={wide}
             confirming={confirming}
+            cancelling={cancelling}
             onConfirm={onConfirm}
+            onCancel={onCancel}
           />
         ) : null}
       </SheetContent>
@@ -118,7 +138,9 @@ function BookingDetails({
   now,
   wide,
   confirming,
+  cancelling,
   onConfirm,
+  onCancel,
 }: {
   booking: PortalBooking
   showPrices: boolean
@@ -126,7 +148,9 @@ function BookingDetails({
   now: number
   wide: boolean
   confirming: boolean
+  cancelling: boolean
   onConfirm: () => void
+  onCancel: () => void
 }) {
   const room = booking.room_number?.trim()
   const price = displayPrice(booking, showPrices)
@@ -139,6 +163,7 @@ function BookingDetails({
       ? formatPoint('Ready since', booking.ready_at, now)
       : null
   const confirm = canConfirmReceived(booking)
+  const cancel = canCancelPortalBooking(booking)
 
   return (
     <div className="overflow-y-auto px-5 pt-3 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
@@ -152,6 +177,8 @@ function BookingDetails({
               Room {room}
             </Badge>
           ) : null}
+          <FrontDeskBadge source={booking.source} />
+          <PaymentStatusBadge status={booking.payment_status} />
           {readySince ? (
             <Badge className="border-transparent text-white" style={{ backgroundColor: primary }}>
               {readySince}
@@ -195,6 +222,38 @@ function BookingDetails({
         >
           {confirming ? 'Confirming…' : 'Confirm received'}
         </button>
+      ) : null}
+      {cancel ? (
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button
+              type="button"
+              disabled={cancelling}
+              className="mt-5 flex min-h-12 w-full cursor-pointer items-center justify-center rounded-xl border border-red-200 text-base font-semibold text-red-700 disabled:cursor-wait disabled:opacity-70"
+            >
+              Cancel booking
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent className={cn('border-slate-200 bg-white text-slate-900', portalFont.className)}>
+            <AlertDialogHeader className="place-items-start text-left">
+              <AlertDialogTitle>Cancel this booking?</AlertDialogTitle>
+              <AlertDialogDescription className="text-slate-500">
+                {room ? `Room ${room} will leave the active board.` : 'This booking will leave the active board.'} You
+                can only cancel before the laundry weighs the bag.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="border-slate-200 text-slate-900">Keep booking</AlertDialogCancel>
+              <AlertDialogAction
+                variant="destructive"
+                disabled={cancelling}
+                onClick={onCancel}
+              >
+                {cancelling ? 'Cancelling…' : 'Cancel booking'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       ) : null}
       {booking.additional_details ? (
         <div className="mt-4 rounded-xl bg-slate-50 p-3">

@@ -21,6 +21,7 @@ import {
   Building2
 } from 'lucide-react'
 import { getBookings } from '@/lib/supabase/services'
+import { createClient } from '@/lib/supabase/client'
 import { BookingWithService } from '@/lib/types/database'
 import { PropertyBadge } from '@/components/property-badge'
 
@@ -29,15 +30,24 @@ interface TurnaroundStat {
   sampleCount: number
 }
 
+interface SourceCounts {
+  guest: number
+  portal: number
+  admin: number
+}
+
 interface PropertyBreakdown {
   id: string
   name: string
   color: string | null
   bookings: number
   revenue: number
+  onlineRevenue: number
+  onDeliveryRevenue: number
   kg: number
   turnaroundMs: number | null
   turnaroundCount: number
+  sources: SourceCounts
 }
 
 interface MonthlyStats {
@@ -91,7 +101,14 @@ function formatKg(kg: number): string {
   return Number.isInteger(rounded) ? `${rounded} kg` : `${rounded.toFixed(1)} kg`
 }
 
-function propertyBreakdown(bookings: BookingWithService[]): PropertyBreakdown[] {
+function emptySources(): SourceCounts {
+  return { guest: 0, portal: 0, admin: 0 }
+}
+
+function propertyBreakdown(
+  bookings: BookingWithService[],
+  onlineCents: Record<string, number>
+): PropertyBreakdown[] {
   const byProperty = new Map<string, PropertyBreakdown & { turnaroundTotalMs: number }>()
   for (const booking of bookings) {
     const id = booking.property_id
@@ -101,13 +118,26 @@ function propertyBreakdown(bookings: BookingWithService[]): PropertyBreakdown[] 
       color: booking.property?.primary_color ?? null,
       bookings: 0,
       revenue: 0,
+      onlineRevenue: 0,
+      onDeliveryRevenue: 0,
       kg: 0,
       turnaroundMs: null,
       turnaroundCount: 0,
       turnaroundTotalMs: 0,
+      sources: emptySources(),
     }
+    const source = booking.source === 'portal' || booking.source === 'admin' ? booking.source : 'guest'
+    current.sources[source] += 1
     current.bookings += 1
     current.revenue += bookingRevenue(booking)
+    current.onlineRevenue += (onlineCents[booking.id] ?? 0) / 100
+    if (
+      booking.payment_status == null ||
+      booking.payment_status === 'pay_on_delivery' ||
+      booking.payment_status === 'unpaid'
+    ) {
+      current.onDeliveryRevenue += bookingRevenue(booking)
+    }
     const weight = Number(booking.weight_kg)
     if (Number.isFinite(weight)) current.kg += weight
     const duration = createdToDeliveredMs(booking)
@@ -127,6 +157,7 @@ function propertyBreakdown(bookings: BookingWithService[]): PropertyBreakdown[] 
 
 export default function AnalyticsPage() {
   const [bookings, setBookings] = useState<BookingWithService[]>([])
+  const [onlineCents, setOnlineCents] = useState<Record<string, number>>({})
   const [, setLoading] = useState(true)
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date()
@@ -187,8 +218,23 @@ export default function AnalyticsPage() {
   const fetchBookings = async () => {
     try {
       setLoading(true)
-      const data = await getBookings()
+      const supabase = createClient()
+      const [data, paymentsResult] = await Promise.all([
+        getBookings(),
+        supabase.from('payments').select('booking_id, amount_cents').eq('status', 'succeeded'),
+      ])
       setBookings(data)
+      const totals: Record<string, number> = {}
+      if (paymentsResult.error) {
+        console.error('Error fetching online payments:', paymentsResult.error)
+      } else {
+        for (const row of paymentsResult.data ?? []) {
+          const cents = Number(row.amount_cents)
+          if (!row.booking_id || !Number.isFinite(cents)) continue
+          totals[row.booking_id] = (totals[row.booking_id] ?? 0) + cents
+        }
+      }
+      setOnlineCents(totals)
     } catch (error) {
       console.error('Error fetching bookings:', error)
     } finally {
@@ -196,7 +242,7 @@ export default function AnalyticsPage() {
     }
   }
 
-  const calculateMonthlyStats = (bookings: BookingWithService[], month: string, dateField: 'created_at' | 'collection_date' | 'departure_date') => {
+  const calculateMonthlyStats = (bookings: BookingWithService[], month: string, dateField: 'created_at' | 'collection_date' | 'departure_date', onlineCentsByBooking: Record<string, number>) => {
     const [year, monthNum] = month.split('-').map(Number)
     // const startDate = new Date(year, monthNum - 1, 1)
     // const endDate = new Date(year, monthNum, 0, 23, 59, 59)
@@ -350,7 +396,7 @@ export default function AnalyticsPage() {
     serviceTurnaround,
     overallTurnaroundMs: overallTurnaroundCount > 0 ? overallTotalMs / overallTurnaroundCount : null,
     overallTurnaroundCount,
-    propertyStats: propertyBreakdown(monthlyBookings),
+    propertyStats: propertyBreakdown(monthlyBookings, onlineCentsByBooking),
   }
 }
 
@@ -360,10 +406,10 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     if (bookings.length > 0) {
-      const stats = calculateMonthlyStats(bookings, selectedMonth, dateFilter)
+      const stats = calculateMonthlyStats(bookings, selectedMonth, dateFilter, onlineCents)
       setMonthlyStats(stats)
     }
-  }, [bookings, selectedMonth, dateFilter])
+  }, [bookings, selectedMonth, dateFilter, onlineCents])
 
   // Update selectedMonth when year changes to ensure it's valid for the new year
   useEffect(() => {
@@ -567,7 +613,7 @@ export default function AnalyticsPage() {
             By property
           </CardTitle>
           <CardDescription className="text-gray-400">
-            Bookings, revenue, weight, and average time from booking to delivery for {selectedMonthLabel}
+            Bookings, revenue, online and on-delivery takings, weight, source, and average time from booking to delivery for {selectedMonthLabel}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -575,7 +621,21 @@ export default function AnalyticsPage() {
             <div className="space-y-3">
               {monthlyStats.propertyStats.map((stat) => (
                 <div key={stat.id} className="flex flex-col gap-4 rounded-lg bg-gray-700/50 p-4 sm:flex-row sm:items-center sm:justify-between">
-                  <PropertyBadge name={stat.name} color={stat.color} />
+                  <div className="min-w-0">
+                    <PropertyBadge name={stat.name} color={stat.color} />
+                    <p className="mt-2 text-xs text-gray-300">
+                      Guest {stat.sources.guest}
+                      <span className="text-gray-500"> · </span>
+                      Front desk {stat.sources.portal}
+                      <span className="text-gray-500"> · </span>
+                      Admin {stat.sources.admin}
+                    </p>
+                    <p className="mt-1 text-xs text-gray-300">
+                      Online R{stat.onlineRevenue.toFixed(2)}
+                      <span className="text-gray-500"> · </span>
+                      On delivery R{stat.onDeliveryRevenue.toFixed(2)}
+                    </p>
+                  </div>
                   <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4 sm:text-right">
                     <div>
                       <div className="text-gray-400">Bookings</div>
@@ -747,7 +807,7 @@ export default function AnalyticsPage() {
                                       </div>
                                       <div className="flex items-center gap-2">
                                         <Phone className="h-4 w-4 text-gray-400" />
-                                        <span className="text-gray-300 text-sm">{booking.phone}</span>
+                                        <span className="text-gray-300 text-sm">{booking.phone?.trim() || '—'}</span>
                                       </div>
                                       <div className="flex items-center gap-2">
                                         <Calendar className="h-4 w-4 text-gray-400" />

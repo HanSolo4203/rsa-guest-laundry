@@ -1,19 +1,21 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { format } from 'date-fns'
 import { ArrowRight, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import { bookingSchema, type BookingFormData } from '@/lib/schemas/booking'
-import { createBooking } from '@/lib/supabase/services'
-import type { Property, Service } from '@/lib/types/database'
+import { tierChoiceLabel } from '@/lib/payments/money'
+import { isYocoRedirect } from '@/lib/payments/redirect'
+import { createGuestBookingSchema, type GuestBookingRequest } from '@/lib/schemas/booking'
+import type { GuestService } from '@/lib/properties'
+import type { Property } from '@/lib/types/database'
 
 interface BookingFormProps {
   property: Property
-  services: Service[]
+  services: GuestService[]
 }
 
 function safeAssetUrl(url: string | null): string | null {
@@ -51,8 +53,8 @@ export function BookingForm({ property, services }: BookingFormProps) {
   const [submittedName, setSubmittedName] = useState<string | null>(null)
   const [logoFailed, setLogoFailed] = useState(false)
 
-  const form = useForm<BookingFormData>({
-    resolver: zodResolver(bookingSchema),
+  const form = useForm<GuestBookingRequest>({
+    resolver: zodResolver(createGuestBookingSchema),
     defaultValues: {
       first_name: '',
       last_name: '',
@@ -62,41 +64,90 @@ export function BookingForm({ property, services }: BookingFormProps) {
       collection_date: todayString(),
       departure_date: tomorrowString(),
       additional_details: '',
+      property_id: property.id,
+      payment_choice: 'pay_on_delivery',
+      tier_id: '',
     },
   })
 
   const collectionDate = form.watch('collection_date')
+  const serviceId = form.watch('service_id')
+  const paymentChoice = form.watch('payment_choice')
+  const selectedService = services.find((service) => service.id === serviceId)
+
+  useEffect(() => {
+    const tierId = form.getValues('tier_id')
+    if (!tierId) return
+    if (!selectedService?.tiers.some((tier) => tier.id === tierId)) {
+      form.setValue('tier_id', '')
+    }
+  }, [form, selectedService])
   const logoUrl = safeAssetUrl(property.logo_url)
   const backgroundUrl = safeAssetUrl(property.background_url)
   const showImage = property.background_type === 'image' && Boolean(backgroundUrl)
   const showVideo = property.background_type === 'video' && Boolean(backgroundUrl)
   const showLogo = Boolean(logoUrl) && !logoFailed
 
-  async function onSubmit(data: BookingFormData) {
+  function blankValues(): GuestBookingRequest {
+    return {
+      first_name: '',
+      last_name: '',
+      phone: '',
+      room_number: '',
+      service_id: '',
+      collection_date: todayString(),
+      departure_date: tomorrowString(),
+      additional_details: '',
+      property_id: property.id,
+      payment_choice: 'pay_on_delivery',
+      tier_id: '',
+    }
+  }
+
+  async function onSubmit(data: GuestBookingRequest) {
     setIsSubmitting(true)
+    let leaving = false
     try {
-      await createBooking({
-        ...data,
-        property_id: property.id,
-        room_number: property.ask_room_number ? data.room_number : '',
+      const response = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...data,
+          property_id: property.id,
+          room_number: property.ask_room_number ? data.room_number : '',
+          tier_id: data.payment_choice === 'pay_now' ? data.tier_id : undefined,
+        }),
       })
+      const body = (await response.json().catch(() => null)) as {
+        bookingId?: string
+        redirectUrl?: string
+        error?: string
+      } | null
+
+      if (body?.redirectUrl && isYocoRedirect(body.redirectUrl)) {
+        leaving = true
+        window.location.assign(body.redirectUrl)
+        return
+      }
+
+      if (!response.ok) {
+        if (body?.bookingId) {
+          leaving = true
+          window.location.assign(`/${property.slug}/booking/${body.bookingId}?payment=failed`)
+          return
+        }
+        toast.error(body?.error || 'Could not send your request. Please try again.')
+        return
+      }
+
       setSubmittedName(data.first_name.trim())
-      form.reset({
-        first_name: '',
-        last_name: '',
-        phone: '',
-        room_number: '',
-        service_id: '',
-        collection_date: todayString(),
-        departure_date: tomorrowString(),
-        additional_details: '',
-      })
+      form.reset(blankValues())
       toast.success('Request sent')
     } catch (error) {
       console.error('Booking error:', error)
       toast.error('Could not send your request. Please try again.')
     } finally {
-      setIsSubmitting(false)
+      if (!leaving) setIsSubmitting(false)
     }
   }
 
@@ -347,12 +398,93 @@ export function BookingForm({ property, services }: BookingFormProps) {
                   )}
                 />
 
+                <FormField
+                  control={form.control}
+                  name="payment_choice"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FieldLabel>Payment</FieldLabel>
+                      <FormControl>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            className="guest-field"
+                            aria-pressed={field.value === 'pay_now'}
+                            style={field.value === 'pay_now' ? { outline: '2px solid var(--brand-primary)' } : undefined}
+                            onClick={() => field.onChange('pay_now')}
+                          >
+                            Pay now
+                          </button>
+                          <button
+                            type="button"
+                            className="guest-field"
+                            aria-pressed={field.value === 'pay_on_delivery'}
+                            style={field.value === 'pay_on_delivery' ? { outline: '2px solid var(--brand-primary)' } : undefined}
+                            onClick={() => field.onChange('pay_on_delivery')}
+                          >
+                            Pay on delivery
+                          </button>
+                        </div>
+                      </FormControl>
+                      <FormMessage className="guest-error" />
+                    </FormItem>
+                  )}
+                />
+
+                {paymentChoice === 'pay_now' ? (
+                  <FormField
+                    control={form.control}
+                    name="tier_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FieldLabel>Bag size</FieldLabel>
+                        <FormControl>
+                          {selectedService && selectedService.tiers.length > 0 ? (
+                            <div className="grid gap-2">
+                              {selectedService.tiers.map((tier) => {
+                                const selected = field.value === tier.id
+                                return (
+                                  <button
+                                    key={tier.id}
+                                    type="button"
+                                    className="guest-field text-left"
+                                    aria-pressed={selected}
+                                    style={selected ? { outline: '2px solid var(--brand-primary)' } : undefined}
+                                    onClick={() => field.onChange(tier.id)}
+                                  >
+                                    {tierChoiceLabel(tier)}
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          ) : (
+                            <p className="text-sm leading-relaxed">
+                              {selectedService
+                                ? 'Online payment is not available for this service. Choose pay on delivery.'
+                                : 'Select a service to see bag sizes.'}
+                            </p>
+                          )}
+                        </FormControl>
+                        <FormMessage className="guest-error" />
+                      </FormItem>
+                    )}
+                  />
+                ) : null}
+
                 <button
                   type="submit"
                   className="guest-submit inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-4 text-base font-medium disabled:opacity-60"
                   disabled={isSubmitting}
                 >
-                  <span>{isSubmitting ? 'Sending…' : 'Submit request'}</span>
+                  <span>
+                    {isSubmitting
+                      ? paymentChoice === 'pay_now'
+                        ? 'Redirecting…'
+                        : 'Sending…'
+                      : paymentChoice === 'pay_now'
+                        ? 'Pay now'
+                        : 'Submit request'}
+                  </span>
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </button>
               </form>

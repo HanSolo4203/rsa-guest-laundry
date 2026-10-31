@@ -5,6 +5,8 @@ import { format, parseISO } from 'date-fns'
 import { Calendar, ChevronLeft, ChevronRight, Phone, Scale, Search, User, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DeliveryActions, type DeliveryPatch } from '@/components/dashboard/delivery-actions'
+import { FrontDeskBadge } from '@/components/front-desk-badge'
+import { PaymentStatusBadge } from '@/components/payments/payment-status-badge'
 import { PropertyBadge } from '@/components/property-badge'
 import { createClient } from '@/lib/supabase/client'
 import { getBookings } from '@/lib/supabase/services'
@@ -86,7 +88,7 @@ export function PropertyBookingsSidebar({
       .filter((booking) => {
         if (!needle) return true
         const name = `${booking.first_name} ${booking.last_name}`.toLowerCase()
-        return name.includes(needle) || booking.phone.toLowerCase().includes(needle)
+        return name.includes(needle) || (booking.phone ?? '').toLowerCase().includes(needle)
       })
       .sort((a, b) => {
         const stageDelta = STAGE_ORDER.indexOf(a.stage) - STAGE_ORDER.indexOf(b.stage)
@@ -226,8 +228,10 @@ export function PropertyBookingsSidebar({
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex min-w-0 items-center gap-1.5">
                           <User className="h-4 w-4 shrink-0" style={{ color: '#6B6B6B' }} />
-                          <p className="truncate font-semibold" style={{ color: '#2F2F2F' }}>
-                            {booking.first_name} {booking.last_name}
+                          <p className="flex min-w-0 items-center gap-1.5 truncate font-semibold" style={{ color: '#2F2F2F' }}>
+                            <span className="truncate">{booking.first_name} {booking.last_name}</span>
+                            <FrontDeskBadge source={booking.source} />
+                            <PaymentStatusBadge status={booking.payment_status} />
                           </p>
                         </div>
                         <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${stage.className}`}>
@@ -237,7 +241,7 @@ export function PropertyBookingsSidebar({
                       <div className="mt-2 space-y-1 text-sm" style={{ color: '#2F2F2F' }}>
                         <p className="flex items-center gap-1.5">
                           <Phone className="h-3.5 w-3.5" style={{ color: '#6B6B6B' }} />
-                          {booking.phone}
+                          {booking.phone?.trim() || 'No phone'}
                           {booking.room_number?.trim() ? (
                             <span style={{ color: '#6B6B6B' }}>· Room {booking.room_number.trim()}</span>
                           ) : null}

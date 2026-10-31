@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -41,6 +42,8 @@ type PortalContextValue = {
   property: PortalProperty | null
   slug: string | null
   loading: boolean
+  headerAction: ReactNode
+  setHeaderAction: (node: ReactNode) => void
 }
 
 const PortalContext = createContext<PortalContextValue | null>(null)
@@ -94,6 +97,10 @@ function PortalProvider({ children }: { children: ReactNode }) {
   const params = useParams()
   const slug = portalSlugFromParams(params.slug)
   const [properties, setProperties] = useState<PortalProperty[] | null>(null)
+  const [headerAction, setHeaderAction] = useState<ReactNode>(null)
+  const setHeaderActionNode = useCallback((node: ReactNode) => {
+    setHeaderAction(node)
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -131,8 +138,10 @@ function PortalProvider({ children }: { children: ReactNode }) {
       property,
       slug,
       loading: properties == null,
+      headerAction,
+      setHeaderAction: setHeaderActionNode,
     }),
-    [properties, property, slug]
+    [properties, property, slug, headerAction, setHeaderActionNode]
   )
 
   return <PortalContext.Provider value={value}>{children}</PortalContext.Provider>
@@ -261,6 +270,7 @@ function UserMenu() {
 }
 
 function PortalHeader() {
+  const { headerAction } = usePortalProperty()
   return (
     <div className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur-md">
       <div className="pt-[env(safe-area-inset-top)]">
@@ -269,6 +279,7 @@ function PortalHeader() {
           <div className="min-w-0 flex-1">
             <Brand />
           </div>
+          {headerAction}
           <UserMenu />
         </header>
       </div>

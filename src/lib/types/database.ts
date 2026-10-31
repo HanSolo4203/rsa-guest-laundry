@@ -16,6 +16,28 @@ export interface ServicePricingTier {
 
 export type BookingStage = 'to_weigh' | 'washing' | 'drying' | 'finishing' | 'ready';
 
+export type BookingSource = 'guest' | 'portal' | 'admin';
+
+export type BookingPaymentStatus = 'unpaid' | 'pending' | 'paid' | 'topup_due' | 'pay_on_delivery';
+
+export type PaymentKind = 'booking' | 'topup';
+
+export type OnlinePaymentStatus = 'pending' | 'succeeded' | 'failed' | 'cancelled' | 'expired';
+
+export interface Payment {
+  id: string;
+  booking_id: string;
+  kind: PaymentKind;
+  amount_cents: number;
+  currency: string;
+  status: OnlinePaymentStatus;
+  yoco_checkout_id: string | null;
+  yoco_payment_id: string | null;
+  prepaid_tier_max_kg: number | null;
+  created_at: string;
+  paid_at: string | null;
+}
+
 export type MachineType = 'washer' | 'dryer';
 
 export interface Machine {
@@ -69,7 +91,7 @@ export interface Booking {
   property_id: string;
   first_name: string;
   last_name: string;
-  phone: string;
+  phone: string | null;
   room_number: string | null;
   service_id: string;
   collection_date: string;
@@ -94,6 +116,11 @@ export interface Booking {
   out_for_delivery_at?: string | null;
   delivered_at?: string | null;
   received_at?: string | null;
+  source: BookingSource;
+  created_by?: string | null;
+  payment_status?: BookingPaymentStatus;
+  prepaid_amount_cents?: number | null;
+  prepaid_tier_max_kg?: number | null;
 }
 
 export interface BookingPropertyTag {
@@ -127,6 +154,8 @@ export interface KioskBooking {
   property_name: string;
   primary_color: string | null;
   room_number: string | null;
+  source: BookingSource;
+  payment_status: BookingPaymentStatus;
 }
 
 export interface PortalProperty {
@@ -143,7 +172,7 @@ export interface PortalBooking {
   property_id: string;
   first_name: string;
   last_name: string;
-  phone: string;
+  phone: string | null;
   room_number: string | null;
   service_id: string;
   service_name: string;
@@ -167,6 +196,9 @@ export interface PortalBooking {
   out_for_delivery_at: string | null;
   delivered_at: string | null;
   received_at: string | null;
+  source: BookingSource;
+  created_by: string | null;
+  payment_status: BookingPaymentStatus;
 }
 
 export type PropertyMemberRole = 'manager' | 'staff'

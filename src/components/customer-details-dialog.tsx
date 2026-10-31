@@ -9,6 +9,8 @@ import {
 } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { Calendar, Phone, User, Package, DollarSign, Weight } from 'lucide-react'
+import { FrontDeskBadge } from '@/components/front-desk-badge'
+import { BookingPaymentPanel } from '@/components/payments/booking-payment-panel'
 import { BookingWithService } from '@/lib/types/database'
 import { formatPrice } from '@/lib/pricing'
 
@@ -55,6 +57,7 @@ export function CustomerDetailsDialog({ open, onOpenChange, booking }: CustomerD
               <User className="h-5 w-5 text-white" />
             </div>
             Customer Details
+            <FrontDeskBadge source={booking.source} tone="dark" />
           </DialogTitle>
           <DialogDescription className="text-gray-300 text-base">
             Complete booking information and customer details
@@ -85,7 +88,7 @@ export function CustomerDetailsDialog({ open, onOpenChange, booking }: CustomerD
                 <Phone className="h-4 w-4 text-blue-400" />
                 Phone Number
               </label>
-              <p className="text-base font-bold text-white bg-gray-600 px-3 py-2 rounded-lg">{booking.phone}</p>
+              <p className="text-base font-bold text-white bg-gray-600 px-3 py-2 rounded-lg">{booking.phone?.trim() || 'Not provided'}</p>
             </div>
           </div>
 
@@ -173,6 +176,8 @@ export function CustomerDetailsDialog({ open, onOpenChange, booking }: CustomerD
               </p>
             </div>
           </div>
+
+          <BookingPaymentPanel booking={booking} />
 
           {/* Additional Details */}
           {booking.additional_details && (

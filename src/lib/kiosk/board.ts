@@ -395,7 +395,24 @@ export function toKioskBooking(value: unknown): KioskBooking | null {
       typeof value.room_number === 'string' && value.room_number.trim()
         ? value.room_number.trim()
         : null,
+    source: value.source === 'portal' || value.source === 'admin' || value.source === 'guest'
+      ? value.source
+      : 'guest',
+    payment_status: paymentStatus(value.payment_status),
   }
+}
+
+function paymentStatus(value: unknown): KioskBooking['payment_status'] {
+  if (
+    value === 'unpaid' ||
+    value === 'pending' ||
+    value === 'paid' ||
+    value === 'topup_due' ||
+    value === 'pay_on_delivery'
+  ) {
+    return value
+  }
+  return 'pay_on_delivery'
 }
 
 export type KioskMachine = {

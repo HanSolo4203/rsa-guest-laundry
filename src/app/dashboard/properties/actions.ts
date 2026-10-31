@@ -86,14 +86,17 @@ async function findUserByEmail(admin: ReturnType<typeof serviceClient>, email: s
   return null
 }
 
-async function inviteRedirect(): Promise<string | undefined> {
+async function inviteRedirect(slug: string): Promise<string | undefined> {
   const headerStore = await headers()
   const origin = headerStore.get('origin')
   if (!origin) return undefined
   try {
-    const url = new URL(origin)
+    const url = new URL('/login', origin)
     if (url.protocol !== 'https:' && url.protocol !== 'http:') return undefined
-    return `${url.origin}/login`
+    if (/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+      url.searchParams.set('property', slug)
+    }
+    return url.toString()
   } catch {
     return undefined
   }
@@ -159,7 +162,7 @@ export async function invitePropertyUser(
 
   const { data: property, error: propertyError } = await admin
     .from('properties')
-    .select('id')
+    .select('id, slug')
     .eq('id', propertyId)
     .maybeSingle()
   if (propertyError || !property) throw new Error('Property not found')
@@ -171,7 +174,7 @@ export async function invitePropertyUser(
   if (existing) {
     userId = await ensurePropertyRole(admin, existing)
   } else {
-    const redirectTo = await inviteRedirect()
+    const redirectTo = await inviteRedirect(typeof property.slug === 'string' ? property.slug : '')
     const { data, error } = await admin.auth.admin.inviteUserByEmail(normalized, {
       redirectTo,
     })

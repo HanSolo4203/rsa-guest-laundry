@@ -1,6 +1,8 @@
 import { StickyNote } from 'lucide-react'
+import { FrontDeskBadge } from '@/components/front-desk-badge'
 import { GuestName } from '@/components/kiosk/guest-facts'
 import { machineCode, serviceMarks, STAGE_ACCENT } from '@/components/kiosk/kiosk-ui'
+import { PaymentStatusBadge, paymentBadge } from '@/components/payments/payment-status-badge'
 import { PropertyBadge } from '@/components/property-badge'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -81,6 +83,8 @@ export function BookingCard({
             Room {room}
           </Badge>
         ) : null}
+        <FrontDeskBadge source={booking.source} className="text-xs md:text-sm" />
+        <PaymentStatusBadge status={booking.payment_status} className="text-xs md:text-sm" />
         <Badge className="border-transparent bg-neutral-100 text-xs text-neutral-800 md:text-sm">
           {marks.label}
         </Badge>
@@ -126,11 +130,12 @@ export function BookingCard({
     </>
   )
 
+  const payment = paymentBadge(booking.payment_status).label
   const label =
     onAdvance && accent
-      ? `${guest}${property ? `, ${property}` : ''}${room ? `, room ${room}` : ''}, ${service}, ${accent.label}${notes ? ', has notes' : ''}${alarming ? ", time's up" : ''}`
+      ? `${guest}${property ? `, ${property}` : ''}${room ? `, room ${room}` : ''}${booking.source === 'portal' ? ', front desk' : ''}, ${service}, ${accent.label}, ${payment}${notes ? ', has notes' : ''}${alarming ? ", time's up" : ''}`
       : onWeigh
-        ? `${guest}${property ? `, ${property}` : ''}${room ? `, room ${room}` : ''}, ${service}, to weigh${notes ? ', has notes' : ''}`
+        ? `${guest}${property ? `, ${property}` : ''}${room ? `, room ${room}` : ''}${booking.source === 'portal' ? ', front desk' : ''}, ${service}, to weigh, ${payment}${notes ? ', has notes' : ''}`
         : undefined
 
   return (
