@@ -20,9 +20,13 @@ export type BookingSource = 'guest' | 'portal' | 'admin';
 
 export type BookingPaymentStatus = 'unpaid' | 'pending' | 'paid' | 'topup_due' | 'pay_on_delivery';
 
-export type PaymentKind = 'booking' | 'topup';
+export type BookingPaymentMethod = 'card' | 'cash' | 'eft' | 'account';
 
-export type OnlinePaymentStatus = 'pending' | 'succeeded' | 'failed' | 'cancelled' | 'expired';
+export type PaymentKind = 'booking' | 'topup' | 'manual';
+
+export type OnlinePaymentStatus = 'pending' | 'succeeded' | 'failed' | 'cancelled' | 'expired' | 'refunded';
+
+export type RecordedPaymentMethod = 'yoco' | 'card_machine' | 'cash' | 'eft' | 'account';
 
 export interface Payment {
   id: string;
@@ -31,6 +35,10 @@ export interface Payment {
   amount_cents: number;
   currency: string;
   status: OnlinePaymentStatus;
+  method: RecordedPaymentMethod;
+  recorded_by: string | null;
+  reference: string | null;
+  note: string | null;
   yoco_checkout_id: string | null;
   yoco_payment_id: string | null;
   prepaid_tier_max_kg: number | null;
@@ -101,7 +109,7 @@ export interface Booking {
   additional_details?: string;
   created_at: string;
   completed_at?: string;
-  payment_method?: 'card' | 'cash';
+  payment_method?: BookingPaymentMethod;
   weight_kg?: number;
   machine_number?: number | null;
   dryer_number?: number | null;
@@ -181,7 +189,7 @@ export interface PortalBooking {
   status: Booking['status'];
   stage: BookingStage;
   total_price: number | null;
-  payment_method: 'card' | 'cash' | null;
+  payment_method: BookingPaymentMethod | null;
   weight_kg: number | null;
   machine_number: number | null;
   dryer_number: number | null;

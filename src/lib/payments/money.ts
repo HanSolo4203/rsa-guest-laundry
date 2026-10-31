@@ -16,6 +16,45 @@ export function formatCents(cents: number): string {
   return `R${(cents / 100).toFixed(2)}`
 }
 
+function splitCents(cents: number): { negative: boolean; whole: number; fraction: number } {
+  const negative = cents < 0
+  const abs = Math.abs(Math.trunc(cents))
+  return {
+    negative,
+    whole: Math.floor(abs / 100),
+    fraction: abs % 100,
+  }
+}
+
+/** Display cents as rands, for example `R 1 234.50`. */
+export function formatRand(cents: number): string {
+  const { negative, whole, fraction } = splitCents(cents)
+  const grouped = String(whole).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
+  return `${negative ? '-' : ''}R ${grouped}.${String(fraction).padStart(2, '0')}`
+}
+
+/** CSV amounts in rands with two decimals and no thousands separator. */
+export function centsToDecimal(cents: number): string {
+  const { negative, whole, fraction } = splitCents(cents)
+  return `${negative ? '-' : ''}${whole}.${String(fraction).padStart(2, '0')}`
+}
+
+export function centsToRandInput(cents: number): string {
+  const { whole, fraction } = splitCents(cents)
+  if (fraction === 0) return String(whole)
+  return `${whole}.${String(fraction).padStart(2, '0')}`
+}
+
+/** Parse a rand input into integer cents. Rejects anything that is not 1 cent to R1 000 000.00. */
+export function randsInputToCents(input: string): number | null {
+  const trimmed = input.trim().replace(/\s+/g, '').replace(/^R/i, '')
+  if (!/^\d+(\.\d{1,2})?$/.test(trimmed)) return null
+  const [whole, fraction = ''] = trimmed.split('.')
+  const cents = Number(whole) * 100 + Number(fraction.padEnd(2, '0'))
+  if (!Number.isSafeInteger(cents) || cents < 1 || cents > 100_000_000) return null
+  return cents
+}
+
 export function formatTierPrice(price: number): string {
   const rounded = Math.round(price * 100) / 100
   if (!Number.isFinite(rounded)) return 'R0'

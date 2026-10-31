@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { useReadyDeliveryNotifications } from '@/hooks/use-ready-delivery-notifications'
+import { useOutstandingPayments } from '@/hooks/use-outstanding-payments'
 import {
   Calendar,
   Settings,
@@ -15,7 +16,8 @@ import {
   Package,
   LogOut,
   BarChart3,
-  Building2
+  Building2,
+  Wallet
 } from 'lucide-react'
 import { ProtectedRoute } from '@/components/protected-route'
 import { useAuth } from '@/contexts/auth-context'
@@ -33,6 +35,12 @@ const navigation = [
     name: 'Bookings',
     href: '/dashboard/bookings',
     icon: Calendar,
+    current: false,
+  },
+  {
+    name: 'Payments',
+    href: '/dashboard/payments',
+    icon: Wallet,
     current: false,
   },
   {
@@ -71,6 +79,7 @@ export default function DashboardLayout({
   const router = useRouter()
   const { signOut } = useAuth()
   const readyCount = useReadyDeliveryNotifications()
+  const outstandingCount = useOutstandingPayments()
 
   const handleSignOut = async () => {
     try {
@@ -136,6 +145,11 @@ export default function DashboardLayout({
                               {readyCount > 99 ? '99+' : readyCount}
                             </span>
                           )}
+                          {item.name === 'Payments' && outstandingCount > 0 && (
+                            <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 text-[11px] font-semibold text-white">
+                              {outstandingCount > 99 ? '99+' : outstandingCount}
+                            </span>
+                          )}
                         </Link>
                       </li>
                     )
@@ -160,7 +174,9 @@ export default function DashboardLayout({
                       : item.href
                     const title = item.name === 'Bookings' && readyCount > 0
                       ? `Bookings, ${readyCount} ready for delivery`
-                      : item.name
+                      : item.name === 'Payments' && outstandingCount > 0
+                        ? `Payments, ${outstandingCount} outstanding`
+                        : item.name
                     return (
                       <li key={item.name}>
                         <Link
@@ -180,6 +196,11 @@ export default function DashboardLayout({
                           {item.name === 'Bookings' && readyCount > 0 && (
                             <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-semibold leading-none text-white">
                               {readyCount > 99 ? '99+' : readyCount}
+                            </span>
+                          )}
+                          {item.name === 'Payments' && outstandingCount > 0 && (
+                            <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-semibold leading-none text-white">
+                              {outstandingCount > 99 ? '99+' : outstandingCount}
                             </span>
                           )}
                         </Link>

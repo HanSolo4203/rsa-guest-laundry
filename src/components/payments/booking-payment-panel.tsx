@@ -14,6 +14,13 @@ const STATUS_LABEL: Record<Payment['status'], string> = {
   failed: 'Failed',
   cancelled: 'Cancelled',
   expired: 'Expired',
+  refunded: 'Refunded',
+}
+
+function kindLabel(kind: string): string {
+  if (kind === 'topup') return 'Top-up'
+  if (kind === 'manual') return 'Manual'
+  return 'Booking'
 }
 
 export function BookingPaymentPanel({ booking }: { booking: BookingWithService }) {
@@ -29,7 +36,7 @@ export function BookingPaymentPanel({ booking }: { booking: BookingWithService }
     const supabase = createClient()
     void supabase
       .from('payments')
-      .select('id, booking_id, kind, amount_cents, currency, status, yoco_checkout_id, yoco_payment_id, prepaid_tier_max_kg, created_at, paid_at')
+      .select('id, booking_id, kind, amount_cents, currency, status, method, recorded_by, reference, note, yoco_checkout_id, yoco_payment_id, prepaid_tier_max_kg, created_at, paid_at')
       .eq('booking_id', booking.id)
       .order('created_at', { ascending: false })
       .then(({ data, error }) => {
@@ -116,7 +123,7 @@ export function BookingPaymentPanel({ booking }: { booking: BookingWithService }
         {payments.map((payment) => (
           <div key={payment.id} className="flex items-center justify-between gap-3 rounded-lg bg-gray-900/60 px-3 py-2 text-sm">
             <div>
-              <p className="font-medium text-white">{payment.kind === 'topup' ? 'Top-up' : 'Booking'}</p>
+              <p className="font-medium text-white">{kindLabel(payment.kind)}</p>
               <p className="text-gray-400">{new Date(payment.created_at).toLocaleString()}</p>
             </div>
             <div className="text-right">

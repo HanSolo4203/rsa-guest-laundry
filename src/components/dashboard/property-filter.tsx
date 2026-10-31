@@ -29,19 +29,21 @@ export function PropertyFilter({
   properties,
   value,
   onValueChange,
+  id = 'property-filter',
 }: {
   properties: Pick<Property, 'id' | 'name'>[]
   value: string
   onValueChange: (value: string) => void
+  id?: string
 }) {
   return (
     <div className="w-full sm:w-64">
-      <label htmlFor="property-filter" className="mb-2 block text-sm font-medium text-gray-300">
+      <label htmlFor={id} className="mb-2 block text-sm font-medium text-gray-300">
         Property
       </label>
       <Select value={value} onValueChange={onValueChange}>
         <SelectTrigger
-          id="property-filter"
+          id={id}
           className="w-full border-gray-600 bg-gray-700 text-white hover:bg-gray-600 focus:ring-2 focus:ring-purple-500"
         >
           <SelectValue placeholder="All properties" />
